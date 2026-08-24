@@ -22,6 +22,7 @@ import {
   ArrowRightOnRectangleIcon,
   Cog6ToothIcon,
   LockClosedIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth, UserRole } from '@/lib/useAuth';
 
@@ -418,6 +419,16 @@ export default function Header() {
                       <Cog6ToothIcon className="w-4 h-4" />
                       Paramètres
                     </Link>
+                    {userRole === 'admin' && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setOpenDropdown(null)}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-colors"
+                      >
+                        <ShieldCheckIcon className="w-4 h-4" />
+                        Administration
+                      </Link>
+                    )}
                   </div>
                   <div className="p-1.5 border-t border-border">
                     <button
