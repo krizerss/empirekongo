@@ -35,6 +35,11 @@ import MyProductsPage from './MyProductsPage';
 import MessagesPage from './MessagesPage';
 import CommandesPage from './CommandesPage';
 import EnterprisesListPage from './EnterprisesListPage';
+import CommunautePage from './CommunautePage';
+import EmploiPage from './EmploiPage';
+import AffiliationPage from './AffiliationPage';
+import PaiementsPage from './PaiementsPage';
+import FavorisPage from './FavorisPage';
 import { useAuth, UserRole } from '@/lib/useAuth';
 
 type TabKey =
@@ -239,6 +244,16 @@ export default function DashboardLayout() {
         return <MessagesPage />;
       case 'orders':
         return <CommandesPage />;
+      case 'communaute':
+        return <CommunautePage />;
+      case 'emploi':
+        return <EmploiPage />;
+      case 'affiliation':
+        return <AffiliationPage />;
+      case 'paiements':
+        return <PaiementsPage />;
+      case 'favorites':
+        return <FavorisPage />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
