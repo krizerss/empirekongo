@@ -14,12 +14,12 @@ const suppliersData: Record<string, {
     founded: '2015', employees: '50-100', verified: true, rating: 4.8, totalReviews: 312,
     logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1c67d252f-1784370699791.png",
     logoAlt: 'Logo Kongo Agro SARL fond vert, entreprise agricole congolaise',
-    banner: 'https://images.unsplash.com/photo-1501184633355-06e92b102476',
+    banner: "https://img.rocket.new/generatedImages/rocket_gen_img_1734d4c84-1772803364064.png",
     bannerAlt: 'Champs agricoles verts luxuriants au Congo, ferme agricole africaine en pleine production',
     description: "Kongo Agro SARL est le leader de l'agriculture congolaise depuis 2015. Nous produisons et distribuons des denrées alimentaires de qualité supérieure, issues de nos fermes situées dans les provinces de Kinshasa et du Kongo Central. Notre mission est de nourrir la RDC avec des produits locaux, sains et accessibles. Nous travaillons avec plus de 200 agriculteurs partenaires et exportons vers 5 pays africains.",
     products: [
     { id: 1, name: 'Café Robusta du Kongo', price: '25,000 FC', unit: '/ Kg', image: 'https://img.rocket.new/generatedImages/rocket_gen_img_1aceaa107-1772687295264.png', alt: 'Grains de café robusta brun foncé dans un sac en jute, café artisanal congolais', rating: 4.8 },
-    { id: 3, name: 'Maïs Séché', price: '8,000 FC', unit: '/ Kg', image: 'https://images.unsplash.com/photo-1658970870100-b926cb232e3e', alt: 'Épis de maïs jaune doré séchés au soleil, céréale de base congolaise', rating: 4.5 },
+    { id: 3, name: 'Maïs Séché', price: '8,000 FC', unit: '/ Kg', image: "https://img.rocket.new/generatedImages/rocket_gen_img_12f701f8b-1772059631290.png", alt: 'Épis de maïs jaune doré séchés au soleil, céréale de base congolaise', rating: 4.5 },
     { id: 5, name: 'Miel Naturel', price: '7,000 FC', unit: '/ Pot', image: 'https://img.rocket.new/generatedImages/rocket_gen_img_1bd4d46c0-1766748178463.png', alt: 'Pot de miel naturel doré avec rayon de miel, apiculture congolaise traditionnelle', rating: 4.9 },
     { id: 9, name: 'Poulet de Ferme', price: '12,000 FC', unit: '/ Kg', image: 'https://img.rocket.new/generatedImages/rocket_gen_img_1ff16ffa0-1773206697563.png', alt: 'Poulet de ferme bien nourri dans une ferme avicole africaine, élevage traditionnel congolais', rating: 4.6 }],
 
@@ -33,7 +33,7 @@ const suppliersData: Record<string, {
     id: 2, name: 'EcoBuild SARL', category: 'BTP & Matériaux', city: 'Matadi', type: 'Grossiste',
     address: 'Zone Industrielle, Matadi, Kongo Central', phone: '+243 84 567 8901', email: 'contact@ecobuild.cd', website: 'www.ecobuild.cd',
     founded: '2018', employees: '20-50', verified: false, rating: 4.2, totalReviews: 145,
-    logo: "https://img.rocket.new/generatedImages/rocket_gen_img_11914d178-1784413962807.png",
+    logo: "https://img.rocket.new/generatedImages/rocket_gen_img_103a7f7c1-1787646508270.png",
     logoAlt: 'Logo EcoBuild SARL fond bleu, entreprise de construction congolaise',
     banner: 'https://img.rocket.new/generatedImages/rocket_gen_img_1a19ed1be-1772640739892.png',
     bannerAlt: 'Chantier de construction moderne avec grues et matériaux, bâtiment en cours à Matadi',

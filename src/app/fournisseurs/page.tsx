@@ -35,14 +35,14 @@ const suppliers: Supplier[] = [
   id: 1, name: 'Kongo Agro SARL', category: 'Agriculture', city: 'Kinshasa', type: 'Producteur',
   logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1c67d252f-1784370699791.png",
   logoAlt: 'Logo Kongo Agro SARL fond vert, entreprise agricole congolaise',
-  cover: 'https://images.unsplash.com/photo-1501184633355-06e92b102476',
+  cover: "https://img.rocket.new/generatedImages/rocket_gen_img_1734d4c84-1772803364064.png",
   coverAlt: 'Champs agricoles verts luxuriants au Congo, ferme agricole africaine en pleine production',
   description: 'Leader de l\'agriculture congolaise, Kongo Agro SARL produit et distribue des denrées alimentaires de qualité supérieure. Spécialisés dans les cultures vivrières et les produits d\'exportation.',
   products: 48, rating: 4.8, reviews: 312, verified: true, founded: '2015'
 },
 {
   id: 2, name: 'EcoBuild SARL', category: 'BTP & Matériaux', city: 'Matadi', type: 'Grossiste',
-  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_11914d178-1784413962807.png",
+  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_103a7f7c1-1787646508270.png",
   logoAlt: 'Logo EcoBuild SARL fond bleu, entreprise de construction congolaise',
   cover: 'https://img.rocket.new/generatedImages/rocket_gen_img_1a19ed1be-1772640739892.png',
   coverAlt: 'Chantier de construction moderne avec grues et matériaux, bâtiment en cours à Matadi',
@@ -51,16 +51,16 @@ const suppliers: Supplier[] = [
 },
 {
   id: 3, name: 'Green Energie', category: 'Énergie', city: 'Kinshasa', type: 'Importateur',
-  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_174be1878-1784413962817.png",
+  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1e4a043f5-1784413143840.png",
   logoAlt: 'Logo Green Energie fond vert émeraude, entreprise énergétique congolaise',
-  cover: "https://img.rocket.new/generatedImages/rocket_gen_img_178c3b07b-1784413971617.png",
+  cover: "https://img.rocket.new/generatedImages/rocket_gen_img_1b937a421-1773093286076.png",
   coverAlt: 'Panneaux solaires sous ciel bleu africain, installation énergie renouvelable au Congo',
   description: 'Spécialiste des solutions d\'énergie renouvelable en RDC. Importation et installation de panneaux solaires, batteries et systèmes d\'éclairage pour particuliers et entreprises.',
   products: 23, rating: 4.7, reviews: 89, verified: true, founded: '2019'
 },
 {
   id: 4, name: 'Saveurs du Kongo', category: 'Agroalimentaire', city: 'Boma', type: 'Producteur',
-  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1bcef8728-1784413963236.png",
+  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_19b92d40e-1787646508289.png",
   logoAlt: 'Logo Saveurs du Kongo fond orange, entreprise agroalimentaire congolaise',
   cover: 'https://img.rocket.new/generatedImages/rocket_gen_img_11aeac4dd-1773092222659.png',
   coverAlt: 'Étalage coloré de fruits et légumes tropicaux africains, marché alimentaire congolais',
@@ -71,14 +71,14 @@ const suppliers: Supplier[] = [
   id: 5, name: 'TechKongo Solutions', category: 'Technologie', city: 'Kinshasa', type: 'Distributeur',
   logo: 'https://img.rocket.new/generatedImages/rocket_gen_img_1bba2e41c-1784370700110.png',
   logoAlt: 'Logo TechKongo Solutions fond bleu nuit, entreprise technologique congolaise',
-  cover: 'https://img.rocket.new/generatedImages/rocket_gen_img_16dc05e63-1772136844881.png',
+  cover: "https://img.rocket.new/generatedImages/rocket_gen_img_1b3a8341e-1785794453121.png",
   coverAlt: 'Circuits imprimés et composants électroniques sur fond sombre, technologie africaine innovante',
   description: 'Distribution d\'équipements informatiques et électroniques reconditionnés. Réparation, maintenance et formation aux nouvelles technologies pour les entreprises congolaises.',
   products: 41, rating: 4.5, reviews: 198, verified: true, founded: '2017'
 },
 {
   id: 6, name: 'Mode Congo', category: 'Mode & Beauté', city: 'Kinshasa', type: 'Fabricant',
-  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_18a326bef-1784413962492.png",
+  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_13e4955e0-1784388894413.png",
   logoAlt: 'Logo Mode Congo, entreprise de mode et textile africain',
   cover: 'https://img.rocket.new/generatedImages/rocket_gen_img_13b6e2cb6-1765354968164.png',
   coverAlt: 'Tissu wax africain coloré avec motifs géométriques traditionnels, textile africain authentique',
@@ -87,7 +87,7 @@ const suppliers: Supplier[] = [
 },
 {
   id: 7, name: 'Congo Élevage Pro', category: 'Élevage', city: 'Lubumbashi', type: 'Producteur',
-  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_15418735d-1784413963751.png",
+  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_168d904fb-1784388894499.png",
   logoAlt: 'Logo Congo Élevage Pro, ferme avicole et bovine congolaise',
   cover: 'https://img.rocket.new/generatedImages/rocket_gen_img_1ff16ffa0-1773206697563.png',
   coverAlt: 'Poulet de ferme bien nourri dans une ferme avicole africaine, élevage traditionnel congolais',
@@ -96,7 +96,7 @@ const suppliers: Supplier[] = [
 },
 {
   id: 8, name: 'Pharma Kongo', category: 'Santé', city: 'Kinshasa', type: 'Grossiste',
-  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1952ea44a-1784413962865.png",
+  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_132c518e0-1787646508101.png",
   logoAlt: 'Logo Pharma Kongo, distributeur pharmaceutique congolais',
   cover: "https://img.rocket.new/generatedImages/rocket_gen_img_154e5b012-1780833154113.png",
   coverAlt: 'Médicaments et produits pharmaceutiques sur fond blanc, pharmacie professionnelle',

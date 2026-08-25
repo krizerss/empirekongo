@@ -27,7 +27,7 @@ interface TeamMember {
 
 const team: TeamMember[] = [
 {
-  name: 'Emmanuel Kongo', role: 'Fondateur & CEO', avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1800651c0-1763294865643.png", avatarAlt: 'Portrait professionnel Emmanuel Kongo, fondateur EmpireKongo',
+  name: 'Emmanuel Kongo', role: 'Fondateur & CEO', avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1a79b8e72-1763295320816.png", avatarAlt: 'Portrait professionnel Emmanuel Kongo, fondateur EmpireKongo',
   bio: 'Entrepreneur visionnaire avec 15 ans d\'expérience dans le commerce africain. Passionné par la transformation digitale de l\'économie congolaise.'
 },
 {

@@ -81,9 +81,9 @@ const enterpriseProducts = [
 
 const galleryImages = [
 { id: 1, src: "https://img.rocket.new/generatedImages/rocket_gen_img_13226860a-1774137538117.png", alt: 'Champs agricoles verts luxuriants au Congo' },
-{ id: 2, src: "https://img.rocket.new/generatedImages/rocket_gen_img_1ef3d8452-1784413972239.png", alt: 'Récolte de maïs dans les champs congolais' },
+{ id: 2, src: "https://img.rocket.new/generatedImages/rocket_gen_img_186bfa786-1787646509451.png", alt: 'Récolte de maïs dans les champs congolais' },
 { id: 3, src: "https://img.rocket.new/generatedImages/rocket_gen_img_1f3a491e6-1772510978376.png", alt: 'Entrepôt de stockage de produits agricoles' },
-{ id: 4, src: "https://img.rocket.new/generatedImages/rocket_gen_img_1577b7648-1784413970835.png", alt: 'Transformation artisanale de produits locaux' },
+{ id: 4, src: "https://img.rocket.new/generatedImages/rocket_gen_img_1c29cca8c-1787646508310.png", alt: 'Transformation artisanale de produits locaux' },
 { id: 5, src: "https://img.rocket.new/generatedImages/rocket_gen_img_19ccbe58b-1772175213968.png", alt: 'Équipe de travail dans les champs agricoles' },
 { id: 6, src: "https://img.rocket.new/generatedImages/rocket_gen_img_11654b5aa-1774112341278.png", alt: 'Marché local de produits frais congolais' }];
 

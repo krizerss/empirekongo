@@ -62,7 +62,7 @@ const productsData: Record<string, {
     id: 3, name: 'Maïs Séché', vendor: 'Kongo Agro SARL', vendorId: 1, vendorVerified: true, vendorCity: 'Kinshasa', vendorPhone: '+243 81 234 5678', vendorEmail: 'contact@kongoagro.cd', vendorProducts: 48, vendorRating: 4.8,
     price: '8,000 FC', priceNum: 8000, unit: '/ Kg', category: 'Agriculture', city: 'Kinshasa', stock: 1000,
     images: [
-    { src: 'https://images.unsplash.com/photo-1658970870100-b926cb232e3e', alt: 'Épis de maïs jaune doré séchés au soleil, céréale de base congolaise' }],
+    { src: "https://img.rocket.new/generatedImages/rocket_gen_img_12f701f8b-1772059631290.png", alt: 'Épis de maïs jaune doré séchés au soleil, céréale de base congolaise' }],
 
     rating: 4.5, reviews: 67,
     description: "Maïs séché de qualité supérieure, cultivé localement dans les plaines fertiles du Kongo. Idéal pour la farine de maïs, la polenta et les préparations traditionnelles africaines.",
@@ -97,9 +97,9 @@ const productsData: Record<string, {
 };
 
 const similarProducts = [
-{ id: 3, name: 'Maïs Séché', vendor: 'Kongo Agro SARL', price: '8,000 FC', unit: '/ Kg', image: 'https://images.unsplash.com/photo-1658970870100-b926cb232e3e', alt: 'Épis de maïs jaune doré séchés au soleil, céréale de base congolaise', rating: 4.5 },
+{ id: 3, name: 'Maïs Séché', vendor: 'Kongo Agro SARL', price: '8,000 FC', unit: '/ Kg', image: "https://img.rocket.new/generatedImages/rocket_gen_img_12f701f8b-1772059631290.png", alt: 'Épis de maïs jaune doré séchés au soleil, céréale de base congolaise', rating: 4.5 },
 { id: 5, name: 'Miel Naturel', vendor: 'Kongo Agro SARL', price: '7,000 FC', unit: '/ Pot', image: 'https://img.rocket.new/generatedImages/rocket_gen_img_1bd4d46c0-1766748178463.png', alt: 'Pot de miel naturel doré avec rayon de miel, apiculture congolaise traditionnelle', rating: 4.9 },
-{ id: 6, name: 'Riz Local', vendor: 'Saveurs du Kongo', price: '6,000 FC', unit: '/ Kg', image: "https://img.rocket.new/generatedImages/rocket_gen_img_136eca2eb-1784370700193.png", alt: 'Riz blanc local dans un bol en bois sur fond sombre, céréale cultivée localement en RDC', rating: 4.4 },
+{ id: 6, name: 'Riz Local', vendor: 'Saveurs du Kongo', price: '6,000 FC', unit: '/ Kg', image: "https://img.rocket.new/generatedImages/rocket_gen_img_17814ecf6-1784370699737.png", alt: 'Riz blanc local dans un bol en bois sur fond sombre, céréale cultivée localement en RDC', rating: 4.4 },
 { id: 11, name: 'Tomates Fraîches', vendor: 'Saveurs du Kongo', price: '4,000 FC', unit: '/ Kg', image: 'https://images.unsplash.com/photo-1667986968934-bf1fd9db241f', alt: 'Tomates fraîches rouges brillantes sur fond sombre, légumes frais du jardin congolais', rating: 4.3 }];
 
 

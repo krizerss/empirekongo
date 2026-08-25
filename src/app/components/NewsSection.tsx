@@ -26,7 +26,7 @@ const articles = [
   title: 'Comment booster votre entreprise ?',
   date: '5 Juil 2026',
   category: 'Conseils',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1c530bfdb-1772808047021.png",
+  image: "https://img.rocket.new/generatedImages/rocket_gen_img_195dfe4bd-1779210993998.png",
   alt: "Homme d'affaires africain confiant en costume sombre, conseils entreprise Congo"
 },
 {

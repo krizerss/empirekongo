@@ -61,15 +61,15 @@ const allProducts: ProductResult[] = [
 
 const allSuppliers: SupplierResult[] = [
 { id: 1, name: 'Kongo Agro SARL', logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1c67d252f-1784370699791.png", logoAlt: 'Logo Kongo Agro SARL', category: 'Agriculture', city: 'Kinshasa', products: 48, rating: 4.8, reviews: 312, verified: true, type: 'Producteur' },
-{ id: 2, name: 'EcoBuild SARL', logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1ca4d53f9-1784413964153.png", logoAlt: 'Logo EcoBuild SARL', category: 'BTP & Matériaux', city: 'Matadi', products: 67, rating: 4.2, reviews: 145, verified: false, type: 'Grossiste' },
-{ id: 3, name: 'Green Energie', logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1d95e2384-1784413963057.png", logoAlt: 'Logo Green Energie', category: 'Énergie', city: 'Kinshasa', products: 23, rating: 4.7, reviews: 89, verified: true, type: 'Importateur' },
-{ id: 4, name: 'TechKongo Solutions', logo: "https://img.rocket.new/generatedImages/rocket_gen_img_14a12dbf1-1784413963501.png", logoAlt: 'Logo TechKongo Solutions', category: 'Technologie', city: 'Kinshasa', products: 31, rating: 4.5, reviews: 201, verified: true, type: 'Distributeur' }];
+{ id: 2, name: 'EcoBuild SARL', logo: "https://img.rocket.new/generatedImages/rocket_gen_img_158e26c32-1787646508677.png", logoAlt: 'Logo EcoBuild SARL', category: 'BTP & Matériaux', city: 'Matadi', products: 67, rating: 4.2, reviews: 145, verified: false, type: 'Grossiste' },
+{ id: 3, name: 'Green Energie', logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1e6a434cd-1787646508253.png", logoAlt: 'Logo Green Energie', category: 'Énergie', city: 'Kinshasa', products: 23, rating: 4.7, reviews: 89, verified: true, type: 'Importateur' },
+{ id: 4, name: 'TechKongo Solutions', logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1da3a8ebb-1787646508221.png", logoAlt: 'Logo TechKongo Solutions', category: 'Technologie', city: 'Kinshasa', products: 31, rating: 4.5, reviews: 201, verified: true, type: 'Distributeur' }];
 
 
 const allCompanies: CompanyResult[] = [
-{ id: 1, name: 'Kongo Industries', logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1610a6ab1-1784413962614.png", logoAlt: 'Logo Kongo Industries', sector: 'Industrie', city: 'Kinshasa', employees: '50-200', rating: 4.6, verified: true },
-{ id: 2, name: 'BTP Congo SARL', logo: "https://img.rocket.new/generatedImages/rocket_gen_img_10e8e2d3f-1784413964092.png", logoAlt: 'Logo BTP Congo SARL', sector: 'Construction', city: 'Matadi', employees: '20-50', rating: 4.3, verified: true },
-{ id: 3, name: 'Énergie Verte RDC', logo: "https://img.rocket.new/generatedImages/rocket_gen_img_111d30599-1784413962448.png", logoAlt: 'Logo Énergie Verte RDC', sector: 'Énergie', city: 'Kinshasa', employees: '10-20', rating: 4.7, verified: false }];
+{ id: 1, name: 'Kongo Industries', logo: "https://img.rocket.new/generatedImages/rocket_gen_img_18e854107-1787646507146.png", logoAlt: 'Logo Kongo Industries', sector: 'Industrie', city: 'Kinshasa', employees: '50-200', rating: 4.6, verified: true },
+{ id: 2, name: 'BTP Congo SARL', logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1b7c298dc-1787646508084.png", logoAlt: 'Logo BTP Congo SARL', sector: 'Construction', city: 'Matadi', employees: '20-50', rating: 4.3, verified: true },
+{ id: 3, name: 'Énergie Verte RDC', logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1c1db7085-1787646506828.png", logoAlt: 'Logo Énergie Verte RDC', sector: 'Énergie', city: 'Kinshasa', employees: '10-20', rating: 4.7, verified: false }];
 
 
 const suggestions = ['Café', 'Huile de palme', 'Panneaux solaires', 'Tissu wax', 'Ciment', 'Miel', 'Riz', 'Poulet'];

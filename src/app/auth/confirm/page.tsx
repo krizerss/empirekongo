@@ -9,21 +9,21 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const supabase = createClient();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase?.auth?.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        router.replace('/member-dashboard');
+        router?.replace('/member-dashboard');
       } else if (event === 'PASSWORD_RECOVERY') {
-        router.replace('/auth/reset-password');
+        router?.replace('/auth/reset-password');
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase?.auth?.getSession()?.then(({ data: { session } }) => {
       if (session) {
-        router.replace('/member-dashboard');
+        router?.replace('/member-dashboard');
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => subscription?.unsubscribe();
   }, [router]);
 
   return (

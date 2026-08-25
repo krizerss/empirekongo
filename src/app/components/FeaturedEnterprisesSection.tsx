@@ -13,7 +13,7 @@ const enterprises = [
   name: 'Kongo Agro SARL',
   category: 'Agriculture',
   city: 'Kinshasa',
-  image: "https://images.unsplash.com/photo-1501184633355-06e92b102476",
+  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1734d4c84-1772803364064.png",
   alt: 'Champs agricoles verts luxuriants au Congo, ferme agricole africaine en pleine production',
   logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1c67d252f-1784370699791.png",
   logoAlt: 'Logo Kongo Agro SARL fond vert, entreprise agricole congolaise'
@@ -25,7 +25,7 @@ const enterprises = [
   city: 'Matadi',
   image: "https://img.rocket.new/generatedImages/rocket_gen_img_1a19ed1be-1772640739892.png",
   alt: 'Chantier de construction moderne avec grues et matériaux, bâtiment en cours à Matadi',
-  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_11914d178-1784413962807.png",
+  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_103a7f7c1-1787646508270.png",
   logoAlt: 'Logo EcoBuild SARL fond bleu, entreprise de construction congolaise'
 },
 {
@@ -33,9 +33,9 @@ const enterprises = [
   name: 'Green Energie',
   category: 'Énergie',
   city: 'Kinshasa',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_178c3b07b-1784413971617.png",
+  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1b937a421-1773093286076.png",
   alt: 'Panneaux solaires sous ciel bleu africain, installation énergie renouvelable au Congo',
-  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_174be1878-1784413962817.png",
+  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1e4a043f5-1784413143840.png",
   logoAlt: 'Logo Green Energie fond vert émeraude, entreprise énergétique congolaise'
 },
 {
@@ -45,7 +45,7 @@ const enterprises = [
   city: 'Boma',
   image: "https://img.rocket.new/generatedImages/rocket_gen_img_11aeac4dd-1773092222659.png",
   alt: 'Étalage coloré de fruits et légumes tropicaux africains, marché alimentaire congolais',
-  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1bcef8728-1784413963236.png",
+  logo: "https://img.rocket.new/generatedImages/rocket_gen_img_19b92d40e-1787646508289.png",
   logoAlt: 'Logo Saveurs du Kongo fond orange, entreprise agroalimentaire congolaise'
 },
 {
@@ -53,7 +53,7 @@ const enterprises = [
   name: 'TechKongo Solutions',
   category: 'Technologie',
   city: 'Kinshasa',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_16dc05e63-1772136844881.png",
+  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1b3a8341e-1785794453121.png",
   alt: 'Circuits imprimés et composants électroniques sur fond sombre, technologie africaine innovante',
   logo: "https://img.rocket.new/generatedImages/rocket_gen_img_1bba2e41c-1784370700110.png",
   logoAlt: 'Logo TechKongo Solutions fond bleu nuit, entreprise technologique congolaise'

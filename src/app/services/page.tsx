@@ -30,14 +30,14 @@ interface ServiceProvider {
 
 const providers: ServiceProvider[] = [
 {
-  id: 1, name: 'Jean-Baptiste Mukendi', avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1ada97d8a-1763292961135.png", avatarAlt: 'Portrait professionnel de Jean-Baptiste Mukendi, développeur web congolais',
+  id: 1, name: 'Jean-Baptiste Mukendi', avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_19755ce44-1763292726380.png", avatarAlt: 'Portrait professionnel de Jean-Baptiste Mukendi, développeur web congolais',
   type: 'Freelance', specialty: 'Développement Web & Mobile', skills: ['React', 'Node.js', 'Flutter', 'UI/UX'],
   city: 'Kinshasa', rating: 4.9, reviews: 87, projects: 134, rate: '50,000 FC/j', availability: 'Disponible', verified: true,
   bio: 'Développeur full-stack avec 6 ans d\'expérience. Spécialisé dans les applications web et mobiles pour les entreprises africaines.',
   responseTime: '< 2h'
 },
 {
-  id: 2, name: 'Agence DigitalKongo', avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1cd021545-1784413962477.png", avatarAlt: 'Logo Agence DigitalKongo, agence de communication digitale',
+  id: 2, name: 'Agence DigitalKongo', avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_138270a8f-1787646508290.png", avatarAlt: 'Logo Agence DigitalKongo, agence de communication digitale',
   type: 'Agence', specialty: 'Marketing Digital & Communication', skills: ['SEO', 'Social Media', 'Branding', 'Publicité'],
   city: 'Kinshasa', rating: 4.7, reviews: 203, projects: 89, rate: '200,000 FC/projet', availability: 'Disponible', verified: true,
   bio: 'Agence de communication digitale leader en RDC. Nous aidons les entreprises à développer leur présence en ligne et à atteindre leurs clients.',
@@ -51,21 +51,21 @@ const providers: ServiceProvider[] = [
   responseTime: '< 24h'
 },
 {
-  id: 4, name: 'TechRepair Pro', avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_170e62c34-1784413963708.png", avatarAlt: 'Logo TechRepair Pro, service de réparation électronique',
+  id: 4, name: 'TechRepair Pro', avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_152d55c1e-1787646508296.png", avatarAlt: 'Logo TechRepair Pro, service de réparation électronique',
   type: 'Technicien', specialty: 'Réparation Électronique & Informatique', skills: ['Smartphones', 'PC', 'Réseaux', 'CCTV'],
   city: 'Kinshasa', rating: 4.5, reviews: 312, projects: 890, rate: '15,000 FC/intervention', availability: 'Disponible', verified: true,
   bio: 'Service de réparation professionnel pour tous vos appareils électroniques. Intervention rapide à domicile ou en atelier.',
   responseTime: '< 1h'
 },
 {
-  id: 5, name: 'Marie-Claire Lumumba', avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_193c375b1-1763297891917.png", avatarAlt: 'Portrait professionnel de Marie-Claire Lumumba, graphiste',
+  id: 5, name: 'Marie-Claire Lumumba', avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_177e50721-1773215914521.png", avatarAlt: 'Portrait professionnel de Marie-Claire Lumumba, graphiste',
   type: 'Freelance', specialty: 'Design Graphique & Identité Visuelle', skills: ['Illustrator', 'Photoshop', 'Figma', 'Branding'],
   city: 'Goma', rating: 4.6, reviews: 145, projects: 267, rate: '30,000 FC/j', availability: 'Occupé', verified: false,
   bio: 'Graphiste créative spécialisée dans l\'identité visuelle et le design de marque pour les entreprises africaines.',
   responseTime: '< 6h'
 },
 {
-  id: 6, name: 'Kongo Legal Partners', avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_11a66445c-1784413962802.png", avatarAlt: 'Logo Kongo Legal Partners, cabinet juridique',
+  id: 6, name: 'Kongo Legal Partners', avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1534062e3-1787646508427.png", avatarAlt: 'Logo Kongo Legal Partners, cabinet juridique',
   type: 'Agence', specialty: 'Conseil Juridique & Conformité', skills: ['Droit des affaires', 'Contrats', 'OHADA', 'Fiscalité'],
   city: 'Kinshasa', rating: 4.9, reviews: 78, projects: 156, rate: '100,000 FC/dossier', availability: 'Disponible', verified: true,
   bio: 'Cabinet juridique spécialisé dans le droit des affaires en RDC et en Afrique centrale. Accompagnement des entreprises locales et internationales.',
@@ -79,7 +79,7 @@ const providers: ServiceProvider[] = [
   responseTime: '< 8h'
 },
 {
-  id: 8, name: 'ElectroPro SARL', avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_16e3feaf5-1784413962359.png", avatarAlt: 'Logo ElectroPro SARL, entreprise d\'électricité',
+  id: 8, name: 'ElectroPro SARL', avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_17bd0324b-1787646506869.png", avatarAlt: 'Logo ElectroPro SARL, entreprise d\'électricité',
   type: 'Technicien', specialty: 'Électricité & Installation Solaire', skills: ['Câblage', 'Solaire', 'Groupe électrogène', 'Domotique'],
   city: 'Kinshasa', rating: 4.7, reviews: 189, projects: 445, rate: '25,000 FC/intervention', availability: 'Disponible', verified: true,
   bio: 'Entreprise spécialisée dans l\'installation électrique et les systèmes d\'énergie solaire pour particuliers et entreprises.',
