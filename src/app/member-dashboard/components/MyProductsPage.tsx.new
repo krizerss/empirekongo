@@ -1,0 +1,3 @@
+// Supabase-backed implementation is available in MyProductsPage.supabase.tsx.
+// This file is intentionally kept as a migration marker until the dashboard import is switched.
+export { default } from './MyProductsPage.supabase';
