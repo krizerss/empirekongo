@@ -22,8 +22,10 @@ import {
   ArrowRightOnRectangleIcon,
   Cog6ToothIcon,
   LockClosedIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
-import { useAuth, UserRole } from '@/lib/useAuth';
+import { useAuth as useAuthContext } from '@/contexts/AuthContext';
+import type { UserRole } from '@/lib/useAuth';
 
 interface NavModule {
   label: string;
@@ -175,7 +177,14 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
-  const { isLoggedIn, userRole, user, logout } = useAuth();
+    const { isLoggedIn, userRole, user: authUser, profile, signOut } = useAuthContext();
+  const logout = signOut;
+  // Map profile/user data for display
+  const user = authUser ? {
+    name: profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Mon compte',
+    email: authUser?.email || '',
+    avatarUrl: profile?.avatar_url || authUser?.user_metadata?.avatar_url || '',
+  } : null;
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -418,6 +427,16 @@ export default function Header() {
                       <Cog6ToothIcon className="w-4 h-4" />
                       Paramètres
                     </Link>
+                    {userRole === 'admin' && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setOpenDropdown(null)}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-colors"
+                      >
+                        <ShieldCheckIcon className="w-4 h-4" />
+                        Administration
+                      </Link>
+                    )}
                   </div>
                   <div className="p-1.5 border-t border-border">
                     <button

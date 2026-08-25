@@ -13,7 +13,7 @@ interface AppLogoProps {
 }
 
 const AppLogo = memo(function AppLogo({
-  src = '/assets/images/app_logo.png',
+  src = '/assets/empirekongo-logo.svg',
   iconName = 'SparklesIcon',
   size = 64,
   className = '',
@@ -33,10 +33,10 @@ const AppLogo = memo(function AppLogo({
       {src ? (
         <AppImage
           src={src}
-          alt="Logo" 
+          alt="EmpireKongo Logo"
           width={size}
           height={size}
-          className="flex-shrink-0"
+          className="flex-shrink-0 drop-shadow-[0_0_8px_rgba(201,168,76,0.5)]"
           priority={true}
           unoptimized={src.endsWith('.svg')}
         />
