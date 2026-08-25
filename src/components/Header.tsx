@@ -24,7 +24,8 @@ import {
   LockClosedIcon,
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
-import { useAuth, UserRole } from '@/lib/useAuth';
+import { useAuth as useAuthContext } from '@/contexts/AuthContext';
+import type { UserRole } from '@/lib/useAuth';
 
 interface NavModule {
   label: string;
@@ -176,7 +177,14 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
-  const { isLoggedIn, userRole, user, logout } = useAuth();
+    const { isLoggedIn, userRole, user: authUser, profile, signOut } = useAuthContext();
+  const logout = signOut;
+  // Map profile/user data for display
+  const user = authUser ? {
+    name: profile?.full_name || authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Mon compte',
+    email: authUser?.email || '',
+    avatarUrl: profile?.avatar_url || authUser?.user_metadata?.avatar_url || '',
+  } : null;
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

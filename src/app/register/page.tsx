@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
 import {
@@ -12,7 +13,9 @@ import {
   PhoneIcon,
   ArrowRightIcon,
   CheckIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
+import { useAuth } from '@/contexts/AuthContext';
 
 const accountTypes = [
   { value: 'member', label: 'Membre', description: 'Commander, réserver et discuter avec les entreprises', icon: '👤' },
@@ -45,11 +48,14 @@ export default function RegisterPage() {
 }
 
 function RegisterForm() {
+  const router = useRouter();
+  const { signUp } = useAuth();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [accountType, setAccountType] = useState<'member' | 'enterprise'>('member');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -60,7 +66,6 @@ function RegisterForm() {
     agree: false,
   });
 
-  // Pre-select enterprise if ?type=enterprise is in URL
   useEffect(() => {
     if (searchParams?.get('type') === 'enterprise') {
       setAccountType('enterprise');
@@ -75,10 +80,45 @@ function RegisterForm() {
     setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
+    if (form.password !== form.confirm) {
+      setError('Les mots de passe ne correspondent pas.');
+      return;
+    }
+    if (form.password.length < 8) {
+      setError('Le mot de passe doit contenir au moins 8 caractères.');
+      return;
+    }
+    if (!form.agree) {
+      setError('Vous devez accepter les conditions d\'utilisation.');
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => setLoading(false), 1500);
+    try {
+      await signUp(form.email, form.password, {
+        fullName: `${form.firstName} ${form.lastName}`.trim(),
+        role: accountType === 'enterprise' ? 'entreprise' : 'client',
+        accountType,
+      });
+      router.push('/member-dashboard');
+      router.refresh();
+    } catch (err: any) {
+      setLoading(false);
+      const msg = err?.message || '';
+      if (msg.includes('User already registered') || msg.includes('already been registered')) {
+        setError('Cette adresse e-mail est déjà utilisée. Connectez-vous ou utilisez une autre adresse.');
+      } else if (msg.includes('Password should be')) {
+        setError('Le mot de passe doit contenir au moins 6 caractères.');
+      } else if (msg.includes('invalid email')) {
+        setError('Adresse e-mail invalide.');
+      } else {
+        setError(msg || 'Une erreur est survenue. Veuillez réessayer.');
+      }
+    }
   };
 
   return (
@@ -97,9 +137,7 @@ function RegisterForm() {
             backgroundSize: '60px 60px',
           }}
         />
-
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-          {/* Logo */}
           <div className="flex items-center gap-3">
             <AppLogo size={36} />
             <div className="flex flex-col leading-none">
@@ -107,8 +145,6 @@ function RegisterForm() {
               <span className="text-[10px] text-muted-foreground tracking-widest uppercase">Connecter, Valoriser</span>
             </div>
           </div>
-
-          {/* Benefits */}
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/10">
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
@@ -122,8 +158,6 @@ function RegisterForm() {
             <p className="text-muted-foreground text-sm leading-relaxed max-w-sm">
               Rejoignez la communauté EmpireKongo et accédez à un réseau d&apos;affaires africain en pleine croissance.
             </p>
-
-            {/* Feature list */}
             <div className="space-y-3 pt-2">
               {[
                 'Profil professionnel complet',
@@ -141,8 +175,6 @@ function RegisterForm() {
               ))}
             </div>
           </div>
-
-          {/* Bottom */}
           <div className="border-l-2 border-primary/50 pl-4">
             <p className="text-sm text-muted-foreground italic">
               &ldquo;En 3 mois, j&apos;ai multiplié mes contacts professionnels par 5 grâce à EmpireKongo.&rdquo;
@@ -154,14 +186,12 @@ function RegisterForm() {
 
       {/* Right panel — form */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 lg:px-12 overflow-y-auto">
-        {/* Mobile logo */}
         <div className="lg:hidden flex items-center gap-2 mb-8">
           <AppLogo size={30} />
           <span className="font-extrabold text-base text-foreground tracking-tight">EMPIREKONGO</span>
         </div>
 
         <div className="w-full max-w-lg">
-          {/* Header */}
           <div className="mb-7">
             <h2 className="text-3xl font-extrabold text-foreground mb-2">Créer un compte</h2>
             <p className="text-muted-foreground text-sm">
@@ -181,7 +211,7 @@ function RegisterForm() {
                 onClick={() => setAccountType(type.value as 'member' | 'enterprise')}
                 className={`relative flex flex-col items-start p-4 rounded-xl border-2 transition-all duration-200 text-left ${
                   accountType === type.value
-                    ? 'border-primary bg-primary/10' :'border-border bg-secondary hover:border-primary/40'
+                    ? 'border-primary bg-primary/10' : 'border-border bg-secondary hover:border-primary/40'
                 }`}
               >
                 {accountType === type.value && (
@@ -201,12 +231,19 @@ function RegisterForm() {
             <div className="mb-5 px-3 py-2 rounded-lg bg-primary/8 border border-primary/20 flex items-start gap-2">
               <span className="text-primary text-sm mt-0.5">ℹ️</span>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Le compte <span className="text-primary font-semibold">Entreprise</span> est réservé aux sociétés et professionnels souhaitant publier des produits et services. Pour acheter ou commander, choisissez <span className="font-semibold text-foreground">Membre</span>.
+                Le compte <span className="text-primary font-semibold">Entreprise</span> est réservé aux sociétés et professionnels souhaitant publier des produits et services.
               </p>
             </div>
           )}
 
-          {/* Form */}
+          {/* Error banner */}
+          {error && (
+            <div className="mb-4 flex items-start gap-2.5 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
+              <ExclamationTriangleIcon className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name row */}
             <div className="grid grid-cols-2 gap-3">
@@ -302,7 +339,6 @@ function RegisterForm() {
                   {showPassword ? <EyeSlashIcon className="w-[18px] h-[18px]" /> : <EyeIcon className="w-[18px] h-[18px]" />}
                 </button>
               </div>
-              {/* Password strength */}
               {form.password && strengthInfo && (
                 <div className="space-y-1 pt-1">
                   <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
@@ -332,7 +368,7 @@ function RegisterForm() {
                     form.confirm && form.confirm !== form.password
                       ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30'
                       : form.confirm && form.confirm === form.password
-                      ? 'border-green-500 focus:border-green-500 focus:ring-green-500/30' :'border-border focus:border-primary focus:ring-primary/30'
+                      ? 'border-green-500 focus:border-green-500 focus:ring-green-500/30' : 'border-border focus:border-primary focus:ring-primary/30'
                   }`}
                 />
                 <button
@@ -385,7 +421,6 @@ function RegisterForm() {
             </button>
           </form>
 
-          {/* Footer note */}
           <p className="text-center text-xs text-muted-foreground mt-6">
             Inscription 100% gratuite. Aucune carte bancaire requise.
           </p>

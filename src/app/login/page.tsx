@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
 import { EyeIcon, EyeSlashIcon, EnvelopeIcon, LockClosedIcon, ArrowRightIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { checkRateLimit, getRateLimitRemaining, isValidEmail, sanitizeInput } from '@/lib/security';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,7 +17,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -40,13 +42,23 @@ export default function LoginPage() {
     setLoading(true);
     setAttempts((prev) => prev + 1);
 
-    // Simulate auth — replace with real Supabase auth
-    setTimeout(() => {
+    try {
+      await signIn(cleanEmail, password);
+      router.push('/member-dashboard');
+      router.refresh();
+    } catch (err: any) {
       setLoading(false);
-      // On success, store session and redirect
-      // useAuth().login({ id: '...', name: '...', email: cleanEmail, role: 'client' });
-      // router.push('/member-dashboard');
-    }, 1500);
+      const msg = err?.message || '';
+      if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials')) {
+        setError('Email ou mot de passe incorrect. Vérifiez vos identifiants.');
+      } else if (msg.includes('Email not confirmed')) {
+        setError('Veuillez confirmer votre adresse e-mail avant de vous connecter.');
+      } else if (msg.includes('Too many requests')) {
+        setError('Trop de tentatives. Veuillez patienter quelques minutes.');
+      } else {
+        setError(msg || 'Une erreur est survenue. Veuillez réessayer.');
+      }
+    }
   };
 
   return (
@@ -128,6 +140,13 @@ export default function LoginPage() {
                 S&apos;inscrire gratuitement
               </Link>
             </p>
+          </div>
+
+          {/* Demo credentials */}
+          <div className="mb-4 p-3 rounded-xl bg-primary/8 border border-primary/20">
+            <p className="text-xs font-semibold text-primary mb-1">Comptes de démonstration :</p>
+            <p className="text-xs text-muted-foreground">Admin: <span className="text-foreground">admin@empirekongo.cd</span> / <span className="text-foreground">Admin2024!</span></p>
+            <p className="text-xs text-muted-foreground">Vendeur: <span className="text-foreground">kongoagro@empirekongo.cd</span> / <span className="text-foreground">Vendor2024!</span></p>
           </div>
 
           {/* Error banner */}
@@ -249,25 +268,11 @@ export default function LoginPage() {
                 type="button"
                 className="flex items-center justify-center gap-2.5 bg-secondary border border-border rounded-xl py-3 text-sm font-medium text-foreground hover:border-primary/40 hover:bg-secondary/80 transition-colors"
               >
-                <span className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[11px] font-bold text-primary">
-                  {provider.icon}
-                </span>
+                <span className="font-bold text-base">{provider.icon}</span>
                 {provider.label}
               </button>
             ))}
           </div>
-
-          <p className="text-center text-xs text-muted-foreground mt-8">
-            En vous connectant, vous acceptez nos{' '}
-            <Link href="#" className="text-primary hover:underline">
-              Conditions d&apos;utilisation
-            </Link>{' '}
-            et notre{' '}
-            <Link href="#" className="text-primary hover:underline">
-              Politique de confidentialité
-            </Link>
-            .
-          </p>
         </div>
       </div>
     </div>
