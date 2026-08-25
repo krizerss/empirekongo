@@ -8,14 +8,16 @@ import { EyeIcon, EyeSlashIcon, EnvelopeIcon, LockClosedIcon, UserIcon, PhoneIco
 import { createClient } from '@/lib/supabase/client';
 
 const accountTypes = [
-  { value: 'member', label: 'Membre', description: 'Commander, réserver et discuter avec les entreprises', icon: '👤' },
+  { value: 'individual', label: 'Membre', description: 'Commander, réserver et discuter avec les entreprises', icon: '👤' },
   { value: 'enterprise', label: 'Entreprise', description: 'Publier vos produits, gérer vos commandes et votre vitrine', icon: '🏢' },
 ] as const;
+
+type AccountType = typeof accountTypes[number]['value'];
 
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [accountType, setAccountType] = useState<'member' | 'enterprise'>('member');
+  const [accountType, setAccountType] = useState<AccountType>('individual');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
