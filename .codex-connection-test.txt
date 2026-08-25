@@ -1,0 +1,2 @@
+Codex GitHub read/write connection test — 2026-08-25.
+This file is intentionally temporary and will be removed after verification.
