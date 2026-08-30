@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import AppImage from '@/components/ui/AppImage';
-import { Bars3Icon, XMarkIcon, MagnifyingGlassIcon, ChevronDownIcon, ShoppingBagIcon, BuildingOfficeIcon, TruckIcon, UsersIcon, WrenchScrewdriverIcon, LinkIcon, CreditCardIcon, InformationCircleIcon, EnvelopeIcon, UserCircleIcon, ArrowRightOnRectangleIcon, Cog6ToothIcon, LockClosedIcon, ShieldCheckIcon, ShoppingCartIcon,  } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon, MagnifyingGlassIcon, ChevronDownIcon, ShoppingBagIcon, BuildingOfficeIcon, TruckIcon, UsersIcon, WrenchScrewdriverIcon, InformationCircleIcon, EnvelopeIcon, UserCircleIcon, ArrowRightOnRectangleIcon, Cog6ToothIcon, LockClosedIcon, ShieldCheckIcon, ShoppingCartIcon,  } from '@heroicons/react/24/outline';
 import { useAuth as useAuthContext } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import type { UserRole } from '@/lib/useAuth';
@@ -81,29 +81,6 @@ const navModules: NavModule[] = [
       { label: 'Consultants', href: '/services?type=Consultant', description: 'Experts sectoriels' },
       { label: 'Techniciens', href: '/services?type=Technicien', description: 'Interventions techniques' },
       { label: 'Emploi', href: '/services?tab=emploi', description: 'Offres d\'emploi en RDC' },
-    ],
-  },
-  {
-    label: 'Affiliation',
-    href: '#affiliation',
-    icon: LinkIcon,
-    visibleTo: LOGGED_IN,
-    requiresAuth: true,
-    children: [
-      { label: 'Mon programme', href: '#affiliation', description: 'Mon lien de parrainage' },
-      { label: 'Mes gains', href: '#affiliation?tab=gains', description: 'Commissions accumulées' },
-      { label: 'Demande de retrait', href: '#affiliation?tab=retrait', description: 'Retirer mes gains' },
-    ],
-  },
-  {
-    label: 'Paiements',
-    href: '#paiements',
-    icon: CreditCardIcon,
-    visibleTo: LOGGED_IN,
-    requiresAuth: true,
-    children: [
-      { label: 'Historique', href: '#paiements', description: 'Toutes mes transactions' },
-      { label: 'Transactions', href: '#paiements?tab=transactions', description: 'Détail des paiements' },
     ],
   },
   {
