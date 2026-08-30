@@ -40,6 +40,8 @@ import EmploiPage from './EmploiPage';
 import AffiliationPage from './AffiliationPage';
 import PaiementsPage from './PaiementsPage';
 import FavorisPage from './FavorisPage';
+import NotificationsPage from './NotificationsPage';
+import { createClient } from '@/lib/supabase/client';
 import { useAuth, UserRole } from '@/lib/useAuth';
 
 type TabKey =
@@ -63,8 +65,8 @@ const navItems: NavItem[] = [
   { key: 'dashboard', label: 'Tableau de bord', icon: HomeIcon, visibleTo: LOGGED_IN, section: 'Mon espace' },
   { key: 'profile', label: 'Mon profil', icon: UserIcon, visibleTo: LOGGED_IN, section: 'Mon espace' },
   { key: 'orders', label: 'Mes commandes', icon: ClipboardDocumentListIcon, visibleTo: LOGGED_IN, section: 'Mon espace' },
-  { key: 'messages', label: 'Messages', icon: ChatBubbleLeftIcon, badge: 5, visibleTo: LOGGED_IN, section: 'Mon espace' },
-  { key: 'notifications', label: 'Notifications', icon: BellIcon, badge: 6, visibleTo: LOGGED_IN, section: 'Mon espace' },
+  { key: 'messages', label: 'Messages', icon: ChatBubbleLeftIcon, visibleTo: LOGGED_IN, section: 'Mon espace' },
+  { key: 'notifications', label: 'Notifications', icon: BellIcon, visibleTo: LOGGED_IN, section: 'Mon espace' },
   { key: 'favorites', label: 'Mes favoris', icon: HeartIcon, visibleTo: LOGGED_IN, section: 'Mon espace' },
   { key: 'products', label: 'Mes produits', icon: ShoppingBagIcon, visibleTo: LOGGED_IN, section: 'Gestion' },
   { key: 'enterprise', label: 'Mon entreprise', icon: BuildingOfficeIcon, visibleTo: LOGGED_IN, section: 'Gestion' },
@@ -205,6 +207,7 @@ export default function DashboardLayout() {
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { userRole, user, logout, isLoggedIn, loading } = useAuth();
@@ -218,6 +221,35 @@ export default function DashboardLayout() {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
+
+  // Fetch unread notification count
+  useEffect(() => {
+    if (!user) return;
+    const supabase = createClient();
+
+    const fetchCount = () => {
+      supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false)
+        .then(({ count }) => setUnreadNotifCount(count ?? 0));
+    };
+
+    fetchCount();
+
+    const channel = supabase
+      .channel('notif-badge')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`,
+      }, fetchCount)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -242,6 +274,8 @@ export default function DashboardLayout() {
         return <MyProductsPage />;
       case 'messages':
         return <MessagesPage />;
+      case 'notifications':
+        return <NotificationsPage />;
       case 'orders':
         return <CommandesPage />;
       case 'communaute':
@@ -420,13 +454,16 @@ export default function DashboardLayout() {
             </button>
 
             <button
+              onClick={() => setActiveTab('notifications')}
               className="relative p-2 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Notifications"
             >
               <BellIcon className="w-[18px] h-[18px]" />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center">
-                6
-              </span>
+              {unreadNotifCount > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center">
+                  {unreadNotifCount}
+                </span>
+              )}
             </button>
 
             {/* User avatar + dropdown */}

@@ -1,6 +1,6 @@
 'use client';
-import React, { useState, useRef, useEffect } from 'react';
-import { MagnifyingGlassIcon, PaperAirplaneIcon, EllipsisVerticalIcon, PhoneIcon, EnvelopeIcon, CheckIcon, ChatBubbleLeftRightIcon,  } from '@heroicons/react/24/outline';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { MagnifyingGlassIcon, PaperAirplaneIcon, EllipsisVerticalIcon, PhoneIcon, EnvelopeIcon, CheckIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
@@ -75,7 +75,7 @@ export default function MessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch all messages involving the current user
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     setError(null);
@@ -145,18 +145,80 @@ export default function MessagesPage() {
       );
 
       setConversations(convList);
-      if (!selectedParticipantId && convList.length > 0) {
-        setSelectedParticipantId(convList[0].participantId);
-      }
+      setSelectedParticipantId((prev) => prev ?? (convList.length > 0 ? convList[0].participantId : null));
     } catch (err: any) {
       setError(err.message || 'Erreur lors du chargement des messages');
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchMessages();
+  }, [fetchMessages]);
+
+  // ─── Realtime subscription ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('messages-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        async (payload) => {
+          const newMsg = payload.new as DbMessage;
+          const senderId = newMsg.sender_id;
+
+          // Fetch sender profile if not already in conversations
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, full_name, email, phone, avatar_url')
+            .eq('id', senderId)
+            .single();
+
+          setConversations((prev) => {
+            const existing = prev.find((c) => c.participantId === senderId);
+            if (existing) {
+              return prev
+                .map((c) =>
+                  c.participantId === senderId
+                    ? {
+                        ...c,
+                        messages: [...c.messages, newMsg],
+                        lastMessage: newMsg.content,
+                        lastTime: newMsg.created_at,
+                        unread: c.unread + (newMsg.receiver_id === user.id && !newMsg.is_read ? 1 : 0),
+                      }
+                    : c
+                )
+                .sort((a, b) => new Date(b.lastTime).getTime() - new Date(a.lastTime).getTime());
+            } else {
+              const newConv: Conversation = {
+                participantId: senderId,
+                participantName: profile?.full_name || profile?.email || 'Utilisateur',
+                participantEmail: profile?.email || '',
+                participantPhone: profile?.phone || '',
+                lastMessage: newMsg.content,
+                lastTime: newMsg.created_at,
+                unread: 1,
+                messages: [newMsg],
+              };
+              return [newConv, ...prev];
+            }
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   // Scroll to bottom when conversation changes
@@ -168,7 +230,6 @@ export default function MessagesPage() {
   const handleSelectConversation = async (participantId: string) => {
     setSelectedParticipantId(participantId);
     if (!user) return;
-    // Mark unread messages from this participant as read
     await supabase
       .from('messages')
       .update({ is_read: true })
@@ -215,7 +276,7 @@ export default function MessagesPage() {
       );
       setNewMessage('');
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de l\'envoi');
+      setError(err.message || "Erreur lors de l'envoi");
     } finally {
       setSending(false);
     }
@@ -314,16 +375,14 @@ export default function MessagesPage() {
                 onClick={() => handleSelectConversation(conv.participantId)}
                 className={`w-full flex items-start gap-3 px-3 py-3 border-b border-border/50 hover:bg-secondary/50 transition-colors text-left ${
                   selectedParticipantId === conv.participantId
-                    ? 'bg-primary/5 border-l-2 border-l-primary' :''
+                    ? 'bg-primary/5 border-l-2 border-l-primary' : ''
                 }`}
               >
-                {/* Avatar */}
                 <div className="relative shrink-0">
                   <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                     <span className="text-xs font-bold text-primary">{getInitials(conv.participantName)}</span>
                   </div>
                 </div>
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
                     <span className="text-sm font-semibold text-foreground truncate">{conv.participantName}</span>
@@ -375,7 +434,7 @@ export default function MessagesPage() {
                     <div
                       className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${
                         fromMe
-                          ? 'bg-primary text-black rounded-br-sm' :'bg-secondary text-foreground rounded-bl-sm'
+                          ? 'bg-primary text-black rounded-br-sm' : 'bg-secondary text-foreground rounded-bl-sm'
                       }`}
                     >
                       <p className="text-sm leading-relaxed">{msg.content}</p>
@@ -426,7 +485,7 @@ export default function MessagesPage() {
 
         {/* Contact info panel */}
         {selected && (
-          <div className="w-64 shrink-0 border-l border-border flex flex-col overflow-y-auto hidden xl:flex">
+          <div className="w-64 shrink-0 border-l border-border flex-col overflow-y-auto hidden xl:flex">
             <div className="p-4 border-b border-border text-center">
               <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-3">
                 <span className="text-lg font-bold text-primary">{getInitials(selected.participantName)}</span>
