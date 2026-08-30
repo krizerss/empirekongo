@@ -265,7 +265,7 @@ export default function StorePage() {
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {promos.map((p) => (
-                          <Link key={p.id} href={`/store/product/${p.id}`} className="product-card group relative overflow-hidden">
+                          <Link key={p.id} href={`/store/${p.id}`} className="product-card group relative overflow-hidden">
                             <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{p.promoLabel}</div>
                             <div className="relative h-28 overflow-hidden">
                               <AppImage src={p.image} alt={p.alt} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="25vw" />
@@ -289,7 +289,7 @@ export default function StorePage() {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         {sponsored.map((p) => (
-                          <Link key={p.id} href={`/store/product/${p.id}`} className="product-card group flex gap-3 p-3">
+                          <Link key={p.id} href={`/store/${p.id}`} className="product-card group flex gap-3 p-3">
                             <div className="relative w-20 h-20 shrink-0 rounded-lg overflow-hidden">
                               <AppImage src={p.image} alt={p.alt} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="80px" />
                             </div>
@@ -325,7 +325,7 @@ export default function StorePage() {
                     <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4' : 'space-y-3'}>
                       {paginated.map((product) =>
                         viewMode === 'grid' ? (
-                          <Link key={product.id} href={`/store/product/${product.id}`} className="product-card group flex flex-col">
+                          <Link key={product.id} href={`/store/${product.id}`} className="product-card group flex flex-col">
                             <div className="relative h-40 overflow-hidden">
                               {product.isPromo && <div className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{product.promoLabel}</div>}
                               {product.isSponsored && <div className="absolute top-2 right-2 z-10 bg-primary/90 text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">Sponsorisé</div>}
@@ -351,7 +351,7 @@ export default function StorePage() {
                             </div>
                           </Link>
                         ) : (
-                          <Link key={product.id} href={`/store/product/${product.id}`} className="product-card group flex gap-4 p-4">
+                          <Link key={product.id} href={`/store/${product.id}`} className="product-card group flex gap-4 p-4">
                             <div className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden">
                               <AppImage src={product.image} alt={product.alt} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="96px" />
                             </div>

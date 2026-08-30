@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon, MapPinIcon, XMarkIcon, PhoneIcon, EnvelopeIcon, BuildingOfficeIcon, ShoppingCartIcon, CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon, TruckIcon, ShieldCheckIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon, StarIcon as StarSolid } from '@heroicons/react/24/solid';
+import Link from 'next/link';
 
 const allCategories = [
   { label: 'Toutes catégories', count: 0 },
@@ -70,12 +71,12 @@ function SellerProfileModal({ seller, onClose, onContact }: { seller: SellerProf
           </button>
         </div>
         <div className="p-5">
-          <div className="flex items-center gap-4 mb-5">
+          <div className="flex items-center justify-between gap-4 mb-5">
             <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0">
               <span className="text-lg font-extrabold text-primary">{initials}</span>
             </div>
             <div>
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center justify-between gap-1.5 flex-wrap">
                 <h3 className="text-base font-extrabold text-foreground">{seller.name}</h3>
                 {seller.verified && <CheckBadgeIcon className="w-4 h-4 text-primary shrink-0" />}
               </div>
@@ -86,19 +87,19 @@ function SellerProfileModal({ seller, onClose, onContact }: { seller: SellerProf
             </div>
           </div>
           <div className="space-y-2.5 mb-5">
-            <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+            <div className="flex items-center justify-between gap-2.5 text-sm text-muted-foreground">
               <MapPinIcon className="w-4 h-4 text-primary/60 shrink-0" />
               <span>{seller.city}</span>
             </div>
-            <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+            <div className="flex items-center justify-between gap-2.5 text-sm text-muted-foreground">
               <BuildingOfficeIcon className="w-4 h-4 text-primary/60 shrink-0" />
               <span>{seller.category}</span>
             </div>
-            <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+            <div className="flex items-center justify-between gap-2.5 text-sm text-muted-foreground">
               <PhoneIcon className="w-4 h-4 text-primary/60 shrink-0" />
               <span>{seller.phone}</span>
             </div>
-            <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+            <div className="flex items-center justify-between gap-2.5 text-sm text-muted-foreground">
               <EnvelopeIcon className="w-4 h-4 text-primary/60 shrink-0" />
               <span className="truncate">{seller.email}</span>
             </div>
@@ -449,10 +450,10 @@ export default function MarketplaceContent() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {paginated.map((product) => (
-                <div
+                <Link
                   key={product.id}
-                  className="bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/40 transition-all duration-200 group cursor-pointer"
-                  onClick={() => setSelectedProduct(product)}
+                  href={`/marketplace/${product.id}`}
+                  className="bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/40 transition-all duration-200 group cursor-pointer block"
                 >
                   <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
                     <AppImage
@@ -498,13 +499,13 @@ export default function MarketplaceContent() {
                     </div>
 
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleContact(product); }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleContact(product); }}
                       className="mt-3 w-full py-2 rounded-xl border border-primary/30 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
                     >
                       Contacter le vendeur
                     </button>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
 
