@@ -214,6 +214,26 @@ export default function MessagesPage() {
           });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `sender_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const updatedMsg = payload.new as DbMessage;
+          setConversations((prev) =>
+            prev.map((c) => ({
+              ...c,
+              messages: c.messages.map((m) =>
+                m.id === updatedMsg.id ? { ...m, is_read: updatedMsg.is_read } : m
+              ),
+            }))
+          );
+        }
+      )
       .subscribe();
 
     return () => {

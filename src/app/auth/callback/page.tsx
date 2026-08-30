@@ -1,4 +1,11 @@
-// This file is intentionally left empty.
-// OAuth callback is handled by route.ts in this directory.
-// The actual Supabase OAuth handler is at /api/auth/callback/route.ts
-export {};
+'use client';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+export default function AuthCallbackPage() {
+  const router = useRouter();
+  useEffect(() => {
+    router?.replace('/login');
+  }, [router]);
+  return null;
+}
