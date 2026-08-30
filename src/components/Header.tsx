@@ -23,8 +23,10 @@ import {
   Cog6ToothIcon,
   LockClosedIcon,
   ShieldCheckIcon,
+  ShoppingCartIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth as useAuthContext } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 import type { UserRole } from '@/lib/useAuth';
 
 interface NavModule {
@@ -178,6 +180,7 @@ export default function Header() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
     const { isLoggedIn, userRole, user: authUser, profile, signOut } = useAuthContext();
+  const { totalItems: cartCount } = useCart();
   const logout = signOut;
   // Map profile/user data for display
   const user = authUser ? {
@@ -361,6 +364,16 @@ export default function Header() {
               <MagnifyingGlassIcon className="w-5 h-5" />
             </button>
           </div>
+
+          {/* Cart Icon */}
+          <Link href="/cart" className="relative p-2 text-muted-foreground hover:text-foreground transition-colors" aria-label="Panier">
+            <ShoppingCartIcon className="w-5 h-5" />
+            {cartCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
+                {cartCount > 9 ? '9+' : cartCount}
+              </span>
+            )}
+          </Link>
 
           {isLoggedIn ? (
             <div className="relative">
