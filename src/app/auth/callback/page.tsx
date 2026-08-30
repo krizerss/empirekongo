@@ -1,2 +1,5 @@
-// Auth callback is handled by route.ts
-export {};
+import { redirect } from 'next/navigation';
+
+export default function AuthCallbackPage() {
+  redirect('/login');
+}
