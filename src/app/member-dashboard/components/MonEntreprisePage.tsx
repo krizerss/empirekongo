@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   PlusIcon,
   PencilSquareIcon,
@@ -22,26 +22,26 @@ import {
   PhotoIcon,
   ChevronDownIcon,
 } from '@heroicons/react/24/outline';
-import { CheckBadgeIcon, StarIcon as StarSolid } from '@heroicons/react/24/solid';
+import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import AppImage from '@/components/ui/AppImage';
+import { createClient } from '@/lib/supabase/client';
 
 interface Enterprise {
   id: string;
   name: string;
   category: string;
-  location: string;
+  city: string;
   phone: string;
   email: string;
   website: string;
   description: string;
-  founded: string;
-  employees: string;
-  logo: string;
-  cover: string;
-  verified: boolean;
-  views: number;
-  followers: number;
-  rating: number;
+  founded_year: number | null;
+  employee_count: number;
+  logo_url: string;
+  cover_url: string;
+  is_verified: boolean;
+  is_active: boolean;
+  owner_id: string | null;
 }
 
 const CATEGORIES = [
@@ -78,46 +78,25 @@ function validateImage(file: File): string | null {
   return null;
 }
 
-const initialEnterprises: Enterprise[] = [
-  {
-    id: '1',
-    name: 'Kongo Agro SARL',
-    category: 'Agriculture',
-    location: 'Kinshasa, RDC',
-    phone: '+243 81 234 5678',
-    email: 'contact@kongoagro.cd',
-    website: 'www.kongoagro.cd',
-    description: 'Entreprise spécialisée dans la production et la commercialisation de produits agricoles de qualité en République Démocratique du Congo.',
-    founded: '2018',
-    employees: '11-25',
-    logo: DEFAULT_LOGO,
-    cover: DEFAULT_COVER,
-    verified: true,
-    views: 1254,
-    followers: 89,
-    rating: 4.8,
-  },
-];
-
 type ViewMode = 'list' | 'detail' | 'form';
 
 interface FormData {
   name: string;
   category: string;
-  location: string;
+  city: string;
   phone: string;
   email: string;
   website: string;
   description: string;
-  founded: string;
-  employees: string;
-  logo: string;
-  cover: string;
+  founded_year: string;
+  employee_count: string;
+  logo_url: string;
+  cover_url: string;
 }
 
 const emptyForm: FormData = {
-  name: '', category: '', location: '', phone: '', email: '',
-  website: '', description: '', founded: '', employees: '', logo: DEFAULT_LOGO, cover: DEFAULT_COVER,
+  name: '', category: '', city: '', phone: '', email: '',
+  website: '', description: '', founded_year: '', employee_count: '', logo_url: DEFAULT_LOGO, cover_url: DEFAULT_COVER,
 };
 
 // ── Add Product to Enterprise Modal ──────────────────────────────────────────
@@ -192,7 +171,7 @@ function AddProductToEnterpriseModal({
           </p>
           <div className="flex items-center justify-center gap-2 mb-5">
             <div className="w-6 h-6 rounded-md overflow-hidden border border-border">
-              <AppImage src={selectedEnterprise?.logo || DEFAULT_LOGO} alt={selectedEnterprise?.name || ''} width={24} height={24} className="object-cover w-full h-full" />
+              <AppImage src={selectedEnterprise?.logo_url || DEFAULT_LOGO} alt={selectedEnterprise?.name || ''} width={24} height={24} className="object-cover w-full h-full" />
             </div>
             <span className="text-sm font-bold text-primary">{selectedEnterprise?.name}</span>
           </div>
@@ -227,14 +206,14 @@ function AddProductToEnterpriseModal({
             {enterprises.length === 1 ? (
               <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/8 border border-primary/20">
                 <div className="w-10 h-10 rounded-lg overflow-hidden border border-border shrink-0">
-                  <AppImage src={enterprises[0].logo} alt={enterprises[0].name} width={40} height={40} className="object-cover w-full h-full" />
+                  <AppImage src={enterprises[0].logo_url || DEFAULT_LOGO} alt={enterprises[0].name} width={40} height={40} className="object-cover w-full h-full" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <p className="text-sm font-bold text-foreground truncate">{enterprises[0].name}</p>
-                    {enterprises[0].verified && <CheckBadgeIcon className="w-3.5 h-3.5 text-primary shrink-0" />}
+                    {enterprises[0].is_verified && <CheckBadgeIcon className="w-3.5 h-3.5 text-primary shrink-0" />}
                   </div>
-                  <p className="text-xs text-muted-foreground">{enterprises[0].category} · {enterprises[0].location}</p>
+                  <p className="text-xs text-muted-foreground">{enterprises[0].category} · {enterprises[0].city}</p>
                 </div>
                 <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">Sélectionnée</span>
               </div>
@@ -247,18 +226,18 @@ function AddProductToEnterpriseModal({
                     onClick={() => setEnterpriseId(ent.id)}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
                       enterpriseId === ent.id
-                        ? 'border-primary/50 bg-primary/8' :'border-border bg-secondary/50 hover:border-primary/30'
+                        ? 'border-primary/50 bg-primary/8' : 'border-border bg-secondary/50 hover:border-primary/30'
                     }`}
                   >
                     <div className="w-10 h-10 rounded-lg overflow-hidden border border-border shrink-0">
-                      <AppImage src={ent.logo} alt={ent.name} width={40} height={40} className="object-cover w-full h-full" />
+                      <AppImage src={ent.logo_url || DEFAULT_LOGO} alt={ent.name} width={40} height={40} className="object-cover w-full h-full" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <p className="text-sm font-bold text-foreground truncate">{ent.name}</p>
-                        {ent.verified && <CheckBadgeIcon className="w-3.5 h-3.5 text-primary shrink-0" />}
+                        {ent.is_verified && <CheckBadgeIcon className="w-3.5 h-3.5 text-primary shrink-0" />}
                       </div>
-                      <p className="text-xs text-muted-foreground">{ent.category} · {ent.location}</p>
+                      <p className="text-xs text-muted-foreground">{ent.category} · {ent.city}</p>
                     </div>
                     <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
                       enterpriseId === ent.id ? 'border-primary bg-primary' : 'border-border'
@@ -378,7 +357,10 @@ function AddProductToEnterpriseModal({
 }
 
 export default function MonEntreprisePage() {
-  const [enterprises, setEnterprises] = useState<Enterprise[]>(initialEnterprises);
+  const [enterprises, setEnterprises] = useState<Enterprise[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -393,6 +375,36 @@ export default function MonEntreprisePage() {
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const selectedEnterprise = enterprises.find((e) => e.id === selectedId) ?? null;
+
+  // ── Fetch user's enterprises ──
+  const fetchEnterprises = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setEnterprises([]);
+        return;
+      }
+      const { data, error: fetchError } = await supabase
+        .from('enterprises')
+        .select('*')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (fetchError) throw fetchError;
+      setEnterprises(data || []);
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors du chargement');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchEnterprises();
+  }, [fetchEnterprises]);
 
   const showSuccess = (msg: string) => {
     setSuccessMsg(msg);
@@ -411,15 +423,15 @@ export default function MonEntreprisePage() {
     setForm({
       name: enterprise.name,
       category: enterprise.category,
-      location: enterprise.location,
+      city: enterprise.city,
       phone: enterprise.phone,
       email: enterprise.email,
       website: enterprise.website,
       description: enterprise.description,
-      founded: enterprise.founded,
-      employees: enterprise.employees,
-      logo: enterprise.logo,
-      cover: enterprise.cover,
+      founded_year: enterprise.founded_year ? String(enterprise.founded_year) : '',
+      employee_count: enterprise.employee_count ? String(enterprise.employee_count) : '',
+      logo_url: enterprise.logo_url || DEFAULT_LOGO,
+      cover_url: enterprise.cover_url || DEFAULT_COVER,
     });
     setFormErrors({});
     setViewMode('form');
@@ -440,7 +452,7 @@ export default function MonEntreprisePage() {
     if (formErrors[field]) setFormErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
-  const handleImageUpload = useCallback((field: 'logo' | 'cover', file: File) => {
+  const handleImageUpload = useCallback((field: 'logo_url' | 'cover_url', file: File) => {
     const err = validateImage(file);
     if (err) { alert(err); return; }
     const url = URL.createObjectURL(file);
@@ -451,43 +463,83 @@ export default function MonEntreprisePage() {
     const errors: Partial<FormData> = {};
     if (!form.name.trim()) errors.name = 'Le nom est requis';
     if (!form.category) errors.category = 'La catégorie est requise';
-    if (!form.location.trim()) errors.location = 'La localisation est requise';
+    if (!form.city.trim()) errors.city = 'La localisation est requise';
     if (!form.email.trim()) errors.email = "L'email est requis";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    if (editingId) {
-      setEnterprises((prev) =>
-        prev.map((e) =>
-          e.id === editingId ? { ...e, ...form } : e
-        )
-      );
-      showSuccess('Entreprise modifiée avec succès !');
-      setSelectedId(editingId);
-      setViewMode('detail');
-    } else {
-      const newEnt: Enterprise = {
-        id: Date.now().toString(),
-        ...form,
-        verified: false,
-        views: 0,
-        followers: 0,
-        rating: 0,
+    try {
+      setSaving(true);
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Vous devez être connecté');
+
+      const payload = {
+        name: form.name.trim(),
+        category: form.category,
+        city: form.city.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        website: form.website.trim(),
+        description: form.description.trim(),
+        founded_year: form.founded_year ? parseInt(form.founded_year) : null,
+        employee_count: form.employee_count ? parseInt(form.employee_count) : 0,
+        logo_url: form.logo_url,
+        cover_url: form.cover_url,
+        owner_id: user.id,
+        is_active: true,
       };
-      setEnterprises((prev) => [...prev, newEnt]);
-      showSuccess('Entreprise créée avec succès !');
-      setViewMode('list');
+
+      if (editingId) {
+        const { error: updateError } = await supabase
+          .from('enterprises')
+          .update({ ...payload, updated_at: new Date().toISOString() })
+          .eq('id', editingId)
+          .eq('owner_id', user.id);
+        if (updateError) throw updateError;
+        showSuccess('Entreprise modifiée avec succès !');
+        setSelectedId(editingId);
+        setViewMode('detail');
+      } else {
+        const slug = form.name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now();
+        const { error: insertError } = await supabase
+          .from('enterprises')
+          .insert({ ...payload, slug });
+        if (insertError) throw insertError;
+        showSuccess('Entreprise créée avec succès !');
+        setViewMode('list');
+      }
+      await fetchEnterprises();
+    } catch (err: any) {
+      alert(err.message || 'Erreur lors de la sauvegarde');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = (id: string) => {
-    setEnterprises((prev) => prev.filter((e) => e.id !== id));
-    setDeleteConfirm(null);
-    if (selectedId === id) setViewMode('list');
-    showSuccess('Entreprise supprimée.');
+  const handleDelete = async (id: string) => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Vous devez être connecté');
+
+      const { error: deleteError } = await supabase
+        .from('enterprises')
+        .delete()
+        .eq('id', id)
+        .eq('owner_id', user.id);
+      if (deleteError) throw deleteError;
+
+      setDeleteConfirm(null);
+      if (selectedId === id) setViewMode('list');
+      showSuccess('Entreprise supprimée.');
+      await fetchEnterprises();
+    } catch (err: any) {
+      alert(err.message || 'Erreur lors de la suppression');
+    }
   };
 
   // ── LIST VIEW ──
@@ -498,7 +550,9 @@ export default function MonEntreprisePage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-extrabold text-foreground">Mes entreprises</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">{enterprises.length} entreprise{enterprises.length !== 1 ? 's' : ''} enregistrée{enterprises.length !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {loading ? 'Chargement...' : `${enterprises.length} entreprise${enterprises.length !== 1 ? 's' : ''} enregistrée${enterprises.length !== 1 ? 's' : ''}`}
+            </p>
           </div>
           <button
             onClick={openCreate}
@@ -517,8 +571,34 @@ export default function MonEntreprisePage() {
           </div>
         )}
 
+        {/* Error toast */}
+        {error && (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-medium">
+            <XMarkIcon className="w-4 h-4 shrink-0" />
+            {error}
+          </div>
+        )}
+
         {/* Empty state */}
-        {enterprises.length === 0 && (
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="bg-card border border-border rounded-xl overflow-hidden animate-pulse">
+                <div className="h-28 bg-secondary" />
+                <div className="px-4 pb-4 -mt-6 relative">
+                  <div className="flex items-end gap-3 mb-3">
+                    <div className="w-14 h-14 rounded-xl bg-secondary border-2 border-card" />
+                    <div className="flex-1 space-y-1.5 pb-1">
+                      <div className="h-3.5 bg-secondary rounded w-3/4" />
+                      <div className="h-3 bg-secondary rounded w-1/2" />
+                    </div>
+                  </div>
+                  <div className="h-8 bg-secondary rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : enterprises.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
               <BuildingOfficeIcon className="w-8 h-8 text-primary/50" />
@@ -533,99 +613,100 @@ export default function MonEntreprisePage() {
               Créer mon entreprise
             </button>
           </div>
-        )}
-
-        {/* Enterprise cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {enterprises.map((ent) => (
-            <div key={ent.id} className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/40 transition-colors group">
-              {/* Cover */}
-              <div className="relative h-28 overflow-hidden">
-                <AppImage
-                  src={ent.cover}
-                  alt={`Couverture de ${ent.name}`}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 640px) 100vw, 50vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                {ent.verified && (
-                  <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/20 backdrop-blur-sm border border-primary/30">
-                    <CheckBadgeIcon className="w-3 h-3 text-primary" />
-                    <span className="text-[10px] font-bold text-primary">Vérifié</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Body */}
-              <div className="px-4 pb-4 -mt-6 relative">
-                <div className="flex items-end gap-3 mb-3">
-                  <div className="w-14 h-14 rounded-xl border-2 border-card overflow-hidden bg-card shadow-lg shrink-0">
-                    <AppImage src={ent.logo} alt={`Logo ${ent.name}`} width={56} height={56} className="object-cover w-full h-full" />
-                  </div>
-                  <div className="flex-1 min-w-0 pb-1">
-                    <h3 className="text-sm font-extrabold text-foreground truncate leading-tight">{ent.name}</h3>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="badge-gold text-[10px] flex items-center gap-0.5">
-                        <TagIcon className="w-2.5 h-2.5" />
-                        {ent.category}
-                      </span>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {enterprises.map((ent) => (
+              <div key={ent.id} className="bg-card border border-border rounded-xl overflow-hidden hover:border-primary/40 transition-colors group">
+                {/* Cover */}
+                <div className="relative h-28 overflow-hidden">
+                  <AppImage
+                    src={ent.cover_url || DEFAULT_COVER}
+                    alt={`Couverture de ${ent.name}`}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 640px) 100vw, 50vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  {ent.is_verified && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/20 backdrop-blur-sm border border-primary/30">
+                      <CheckBadgeIcon className="w-3 h-3 text-primary" />
+                      <span className="text-[10px] font-bold text-primary">Vérifié</span>
                     </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
-                  <MapPinIcon className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">{ent.location}</span>
-                </div>
-
-                {/* Stats row */}
-                <div className="flex items-center gap-3 mb-4 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <EyeIcon className="w-3.5 h-3.5" />
-                    {ent.views.toLocaleString()}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <UserGroupIcon className="w-3.5 h-3.5" />
-                    {ent.followers}
-                  </span>
-                  {ent.rating > 0 && (
-                    <span className="flex items-center gap-1">
-                      <StarSolid className="w-3.5 h-3.5 text-primary" />
-                      {ent.rating}
-                    </span>
                   )}
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => openDetail(ent.id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-foreground text-xs font-semibold hover:bg-secondary/80 transition-colors"
-                  >
-                    <EyeIcon className="w-3.5 h-3.5" />
-                    Voir
-                    <ChevronRightIcon className="w-3 h-3 ml-auto" />
-                  </button>
-                  <button
-                    onClick={() => openEdit(ent)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-muted-foreground text-xs font-semibold hover:border-primary hover:text-foreground transition-colors"
-                  >
-                    <PencilSquareIcon className="w-3.5 h-3.5" />
-                    Modifier
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm(ent.id)}
-                    className="p-2 rounded-lg border border-border text-muted-foreground hover:border-red-500/50 hover:text-red-400 transition-colors"
-                    aria-label="Supprimer"
-                  >
-                    <TrashIcon className="w-3.5 h-3.5" />
-                  </button>
+                {/* Body */}
+                <div className="px-4 pb-4 -mt-6 relative">
+                  <div className="flex items-end gap-3 mb-3">
+                    <div className="w-14 h-14 rounded-xl border-2 border-card overflow-hidden bg-card shadow-lg shrink-0">
+                      <AppImage src={ent.logo_url || DEFAULT_LOGO} alt={`Logo ${ent.name}`} width={56} height={56} className="object-cover w-full h-full" />
+                    </div>
+                    <div className="flex-1 min-w-0 pb-1">
+                      <h3 className="text-sm font-extrabold text-foreground truncate leading-tight">{ent.name}</h3>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {ent.category && (
+                          <span className="badge-gold text-[10px] flex items-center gap-0.5">
+                            <TagIcon className="w-2.5 h-2.5" />
+                            {ent.category}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {ent.city && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
+                      <MapPinIcon className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{ent.city}</span>
+                    </div>
+                  )}
+
+                  {/* Stats row */}
+                  <div className="flex items-center gap-3 mb-4 text-xs text-muted-foreground">
+                    {ent.employee_count > 0 && (
+                      <span className="flex items-center gap-1">
+                        <UserGroupIcon className="w-3.5 h-3.5" />
+                        {ent.employee_count}
+                      </span>
+                    )}
+                    {ent.founded_year && (
+                      <span className="flex items-center gap-1">
+                        <CalendarDaysIcon className="w-3.5 h-3.5" />
+                        {ent.founded_year}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => openDetail(ent.id)}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-foreground text-xs font-semibold hover:bg-secondary/80 transition-colors"
+                    >
+                      <EyeIcon className="w-3.5 h-3.5" />
+                      Voir
+                      <ChevronRightIcon className="w-3 h-3 ml-auto" />
+                    </button>
+                    <button
+                      onClick={() => openEdit(ent)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-muted-foreground text-xs font-semibold hover:border-primary hover:text-foreground transition-colors"
+                    >
+                      <PencilSquareIcon className="w-3.5 h-3.5" />
+                      Modifier
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm(ent.id)}
+                      className="p-2 rounded-lg border border-border text-muted-foreground hover:border-red-500/50 hover:text-red-400 transition-colors"
+                      aria-label="Supprimer"
+                    >
+                      <TrashIcon className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Delete confirm modal */}
         {deleteConfirm && (
@@ -717,7 +798,7 @@ export default function MonEntreprisePage() {
           {/* Cover */}
           <div className="relative h-44 sm:h-52 overflow-hidden">
             <AppImage
-              src={ent.cover}
+              src={ent.cover_url || DEFAULT_COVER}
               alt={`Couverture de ${ent.name}`}
               fill
               className="object-cover"
@@ -725,18 +806,10 @@ export default function MonEntreprisePage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
             <div className="absolute bottom-3 right-4 flex items-center gap-4">
-              <div className="flex items-center gap-1.5 text-white/80 text-xs">
-                <EyeIcon className="w-3.5 h-3.5" />
-                <span className="font-semibold">{ent.views.toLocaleString()} vues</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-white/80 text-xs">
-                <UserGroupIcon className="w-3.5 h-3.5" />
-                <span className="font-semibold">{ent.followers} abonnés</span>
-              </div>
-              {ent.rating > 0 && (
+              {ent.employee_count > 0 && (
                 <div className="flex items-center gap-1.5 text-white/80 text-xs">
-                  <StarSolid className="w-3.5 h-3.5 text-primary" />
-                  <span className="font-semibold">{ent.rating} / 5</span>
+                  <UserGroupIcon className="w-3.5 h-3.5" />
+                  <span className="font-semibold">{ent.employee_count} employés</span>
                 </div>
               )}
             </div>
@@ -746,26 +819,30 @@ export default function MonEntreprisePage() {
           <div className="px-5 pb-5 -mt-10 relative">
             <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-5">
               <div className="w-20 h-20 rounded-2xl overflow-hidden border-4 border-card bg-card shadow-xl shrink-0">
-                <AppImage src={ent.logo} alt={`Logo ${ent.name}`} width={80} height={80} className="object-cover w-full h-full" />
+                <AppImage src={ent.logo_url || DEFAULT_LOGO} alt={`Logo ${ent.name}`} width={80} height={80} className="object-cover w-full h-full" />
               </div>
               <div className="flex-1 min-w-0 sm:pb-2">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                   <h2 className="text-xl font-extrabold text-foreground leading-tight">{ent.name}</h2>
-                  {ent.verified && <CheckBadgeIcon className="w-5 h-5 text-primary shrink-0" title="Entreprise vérifiée" />}
+                  {ent.is_verified && <CheckBadgeIcon className="w-5 h-5 text-primary shrink-0" title="Entreprise vérifiée" />}
                 </div>
                 <div className="flex flex-wrap items-center gap-2.5 text-xs text-muted-foreground">
-                  <span className="badge-gold flex items-center gap-1">
-                    <TagIcon className="w-3 h-3" />
-                    {ent.category}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <MapPinIcon className="w-3.5 h-3.5" />
-                    {ent.location}
-                  </span>
-                  {ent.founded && (
+                  {ent.category && (
+                    <span className="badge-gold flex items-center gap-1">
+                      <TagIcon className="w-3 h-3" />
+                      {ent.category}
+                    </span>
+                  )}
+                  {ent.city && (
+                    <span className="flex items-center gap-1">
+                      <MapPinIcon className="w-3.5 h-3.5" />
+                      {ent.city}
+                    </span>
+                  )}
+                  {ent.founded_year && (
                     <span className="flex items-center gap-1">
                       <CalendarDaysIcon className="w-3.5 h-3.5" />
-                      Fondée en {ent.founded}
+                      Fondée en {ent.founded_year}
                     </span>
                   )}
                 </div>
@@ -809,12 +886,12 @@ export default function MonEntreprisePage() {
                   </div>
                 </div>
               )}
-              {ent.employees && (
+              {ent.employee_count > 0 && (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-border">
                   <UserGroupIcon className="w-4 h-4 text-primary shrink-0" />
                   <div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Employés</p>
-                    <p className="text-sm font-semibold text-foreground">{ent.employees} personnes</p>
+                    <p className="text-sm font-semibold text-foreground">{ent.employee_count} personnes</p>
                   </div>
                 </div>
               )}
@@ -897,7 +974,7 @@ export default function MonEntreprisePage() {
         {/* Cover preview + upload */}
         <div className="relative h-36 overflow-hidden group">
           <AppImage
-            src={form.cover || DEFAULT_COVER}
+            src={form.cover_url || DEFAULT_COVER}
             alt="Photo de couverture de l'entreprise"
             fill
             className="object-cover"
@@ -917,7 +994,7 @@ export default function MonEntreprisePage() {
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload('cover', f); }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload('cover_url', f); }}
           />
         </div>
 
@@ -925,7 +1002,7 @@ export default function MonEntreprisePage() {
         <div className="px-5 -mt-8 mb-4 relative">
           <div className="relative inline-block">
             <div className="w-16 h-16 rounded-xl overflow-hidden border-4 border-card bg-card shadow-lg">
-              <AppImage src={form.logo || DEFAULT_LOGO} alt="Logo de l'entreprise" width={64} height={64} className="object-cover w-full h-full" />
+              <AppImage src={form.logo_url || DEFAULT_LOGO} alt="Logo de l'entreprise" width={64} height={64} className="object-cover w-full h-full" />
             </div>
             <button
               type="button"
@@ -940,7 +1017,7 @@ export default function MonEntreprisePage() {
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload('logo', f); }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload('logo_url', f); }}
             />
           </div>
         </div>
@@ -986,19 +1063,19 @@ export default function MonEntreprisePage() {
               </label>
               <input
                 type="text"
-                value={form.location}
-                onChange={(e) => handleFormChange('location', e.target.value)}
+                value={form.city}
+                onChange={(e) => handleFormChange('city', e.target.value)}
                 placeholder="Ex: Kinshasa, RDC"
-                className={`w-full px-3 py-2.5 rounded-lg bg-secondary border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors ${formErrors.location ? 'border-red-500/60' : 'border-border'}`}
+                className={`w-full px-3 py-2.5 rounded-lg bg-secondary border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors ${formErrors.city ? 'border-red-500/60' : 'border-border'}`}
               />
-              {formErrors.location && <p className="text-xs text-red-400 mt-1">{formErrors.location}</p>}
+              {formErrors.city && <p className="text-xs text-red-400 mt-1">{formErrors.city}</p>}
             </div>
             <div>
               <label className="block text-xs font-semibold text-foreground mb-1.5">Année de fondation</label>
               <input
                 type="text"
-                value={form.founded}
-                onChange={(e) => handleFormChange('founded', e.target.value)}
+                value={form.founded_year}
+                onChange={(e) => handleFormChange('founded_year', e.target.value)}
                 placeholder="Ex: 2018"
                 className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors"
               />
@@ -1046,14 +1123,14 @@ export default function MonEntreprisePage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-foreground mb-1.5">Nombre d'employés</label>
-              <select
-                value={form.employees}
-                onChange={(e) => handleFormChange('employees', e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors"
-              >
-                <option value="">Sélectionner</option>
-                {EMPLOYEES_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-              </select>
+              <input
+                type="number"
+                value={form.employee_count}
+                onChange={(e) => handleFormChange('employee_count', e.target.value)}
+                placeholder="Ex: 25"
+                min="0"
+                className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors"
+              />
             </div>
           </div>
 
@@ -1082,10 +1159,11 @@ export default function MonEntreprisePage() {
             <button
               type="button"
               onClick={handleSubmit}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg gold-gradient text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity shadow-md"
+              disabled={saving}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg gold-gradient text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity shadow-md disabled:opacity-60"
             >
               <CheckCircleIcon className="w-4 h-4" />
-              {editingId ? 'Enregistrer les modifications' : "Créer l'entreprise"}
+              {saving ? 'Enregistrement...' : editingId ? 'Enregistrer les modifications' : "Créer l'entreprise"}
             </button>
           </div>
         </div>
