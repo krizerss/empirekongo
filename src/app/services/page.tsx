@@ -1,5 +1,6 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AppImage from '@/components/ui/AppImage';
@@ -597,7 +598,10 @@ function EmploiTab() {
 type MainTab = 'prestataires' | 'emploi';
 
 export default function ServicesPage() {
-  const [activeTab, setActiveTab] = useState<MainTab>('prestataires');
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<MainTab>(() => {
+    return searchParams.get('tab') === 'emploi' ? 'emploi' : 'prestataires';
+  });
   const [search, setSearch] = useState('');
 
   return (

@@ -3,28 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import AppImage from '@/components/ui/AppImage';
-import {
-  Bars3Icon,
-  XMarkIcon,
-  MagnifyingGlassIcon,
-  ChevronDownIcon,
-  ShoppingBagIcon,
-  BuildingOfficeIcon,
-  TruckIcon,
-  UsersIcon,
-  BriefcaseIcon,
-  WrenchScrewdriverIcon,
-  LinkIcon,
-  CreditCardIcon,
-  InformationCircleIcon,
-  EnvelopeIcon,
-  UserCircleIcon,
-  ArrowRightOnRectangleIcon,
-  Cog6ToothIcon,
-  LockClosedIcon,
-  ShieldCheckIcon,
-  ShoppingCartIcon,
-} from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon, MagnifyingGlassIcon, ChevronDownIcon, ShoppingBagIcon, BuildingOfficeIcon, TruckIcon, UsersIcon, WrenchScrewdriverIcon, LinkIcon, CreditCardIcon, InformationCircleIcon, EnvelopeIcon, UserCircleIcon, ArrowRightOnRectangleIcon, Cog6ToothIcon, LockClosedIcon, ShieldCheckIcon, ShoppingCartIcon,  } from '@heroicons/react/24/outline';
 import { useAuth as useAuthContext } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import type { UserRole } from '@/lib/useAuth';
@@ -91,17 +70,6 @@ const navModules: NavModule[] = [
     ],
   },
   {
-    label: 'Emploi',
-    href: '#emploi',
-    icon: BriefcaseIcon,
-    visibleTo: ALL_ROLES,
-    children: [
-      { label: 'Offres d\'emploi', href: '#emploi', description: 'Trouver un poste' },
-      { label: 'Publier une offre', href: '#emploi?action=publier', description: 'Recruter des talents' },
-      { label: 'Candidatures', href: '#emploi?tab=candidatures', description: 'Suivre mes candidatures' },
-    ],
-  },
-  {
     label: 'Services',
     href: '/services',
     icon: WrenchScrewdriverIcon,
@@ -112,6 +80,7 @@ const navModules: NavModule[] = [
       { label: 'Agences', href: '/services?type=Agence', description: 'Équipes professionnelles' },
       { label: 'Consultants', href: '/services?type=Consultant', description: 'Experts sectoriels' },
       { label: 'Techniciens', href: '/services?type=Technicien', description: 'Interventions techniques' },
+      { label: 'Emploi', href: '/services?tab=emploi', description: 'Offres d\'emploi en RDC' },
     ],
   },
   {

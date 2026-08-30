@@ -1,4 +1,5 @@
-// This file intentionally has no HTTP exports.
-// OAuth callback is handled by /api/auth/callback/route.ts
-// Supabase redirect URL should point to /api/auth/callback
-export const dynamic = 'force-dynamic';
+import { NextResponse } from 'next/server';
+
+export async function GET() {
+  return NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'));
+}
