@@ -1,15 +1,2 @@
-'use client';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-
-export default function AuthCallbackPage() {
-  const router = useRouter();
-  useEffect(() => {
-    router?.replace('/auth/confirm');
-  }, [router]);
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <p className="text-white">Redirection en cours…</p>
-    </div>
-  );
-}
+// Auth callback is handled by src/app/auth/callback/route.ts
+// This file exists for reference only and must not export a default component.
