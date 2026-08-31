@@ -2,15 +2,13 @@ import { createClient } from './client';
 
 export type Profile = {
   id: string;
-  first_name: string;
-  last_name: string;
-  phone: string | null;
-  account_type: 'individual' | 'enterprise' | 'supplier' | 'admin';
+  email: string;
+  full_name: string;
   avatar_url: string | null;
-  city: string | null;
-  country: string;
-  website: string | null;
-  bio: string | null;
+  phone: string | null;
+  role: string | null;
+  account_type: string | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -27,9 +25,10 @@ export type Enterprise = {
   website: string | null;
   address: string | null;
   city: string | null;
-  province: string | null;
-  country: string;
+  province?: string | null;
+  country?: string | null;
   logo_url: string | null;
+  cover_url?: string | null;
   verified: boolean;
   created_at: string;
   updated_at: string;
@@ -52,116 +51,144 @@ export type Product = {
   updated_at: string;
 };
 
-export async function getCurrentProfile() {
+async function getAuthenticatedUser() {
   const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError) throw authError;
-  if (!user) return null;
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  if (!user) throw new Error('Utilisateur non connecté');
+  return { supabase, user };
+}
 
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle();
-
+export async function getCurrentProfile() {
+  const { supabase, user } = await getAuthenticatedUser();
+  const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
   if (error) throw error;
   return { user, profile: data as Profile | null };
 }
 
 export async function updateCurrentProfile(values: Partial<Profile>) {
-  const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError) throw authError;
-  if (!user) throw new Error('Utilisateur non connecté');
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .update(values)
-    .eq('id', user.id)
-    .select('*')
-    .single();
-
+  const { supabase, user } = await getAuthenticatedUser();
+  const { data, error } = await supabase.from('profiles').update(values).eq('id', user.id).select('*').single();
   if (error) throw error;
   return data as Profile;
 }
 
 export async function getMyEnterprises() {
-  const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError) throw authError;
-  if (!user) return [];
-
+  const { supabase, user } = await getAuthenticatedUser();
   const { data, error } = await supabase
     .from('enterprises')
     .select('*')
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false });
-
   if (error) throw error;
-  return (data ?? []) as Enterprise[];
+  return (data ?? []).map((row: any) => ({
+    ...row,
+    verified: Boolean(row.is_verified),
+  })) as Enterprise[];
 }
 
 export async function getMyProducts() {
-  const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError) throw authError;
-  if (!user) return [];
-
+  const { supabase, user } = await getAuthenticatedUser();
   const { data, error } = await supabase
     .from('products')
     .select('*')
-    .eq('owner_id', user.id)
+    .eq('vendor_id', user.id)
     .order('created_at', { ascending: false });
-
   if (error) throw error;
-  return (data ?? []) as Product[];
+
+  const enterprises = await getMyEnterprises();
+  const defaultEnterpriseId = enterprises[0]?.id ?? '';
+
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    owner_id: row.vendor_id,
+    enterprise_id: defaultEnterpriseId,
+    name: row.name,
+    slug: row.name?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') ?? null,
+    description: row.description ?? null,
+    category: row.category ?? '',
+    sub_category: null,
+    status: row.is_active ? 'Actif' : 'Brouillon',
+    availability: row.stock_status === 'in_stock' ? 'Disponible' : row.stock_status === 'on_order' ? 'Sur commande' : 'Rupture',
+    main_image_url: row.image_url ?? null,
+    views: 0,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  })) as Product[];
 }
 
 export async function createProduct(input: Omit<Product, 'id' | 'owner_id' | 'created_at' | 'updated_at' | 'views'>) {
-  const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError) throw authError;
-  if (!user) throw new Error('Utilisateur non connecté');
+  const { supabase, user } = await getAuthenticatedUser();
+  const enterprises = await getMyEnterprises();
+  const enterprise = enterprises.find((item) => item.id === input.enterprise_id) ?? enterprises[0];
+  if (!enterprise) throw new Error('Aucune entreprise disponible. Créez d’abord une entreprise.');
 
   const { data, error } = await supabase
     .from('products')
-    .insert({ ...input, owner_id: user.id })
+    .insert({
+      name: input.name,
+      description: input.description,
+      category: input.category,
+      vendor_id: user.id,
+      vendor_name: enterprise.name,
+      vendor_type: 'enterprise',
+      vendor_phone: enterprise.phone,
+      vendor_email: enterprise.email,
+      vendor_city: enterprise.city,
+      vendor_verified: enterprise.verified,
+      image_url: input.main_image_url,
+      alt_text: input.name,
+      is_active: input.status === 'Actif',
+    })
     .select('*')
     .single();
-
   if (error) throw error;
-  return data as Product;
+  return { ...input, id: data.id, owner_id: user.id, enterprise_id: enterprise.id, views: 0, created_at: data.created_at, updated_at: data.updated_at } as Product;
 }
 
 export async function updateProduct(id: string, values: Partial<Product>) {
-  const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError) throw authError;
-  if (!user) throw new Error('Utilisateur non connecté');
+  const { supabase, user } = await getAuthenticatedUser();
+  const enterprises = await getMyEnterprises();
+  const enterprise = values.enterprise_id ? enterprises.find((item) => item.id === values.enterprise_id) : enterprises[0];
+
+  const patch: Record<string, unknown> = {};
+  if (values.name !== undefined) patch.name = values.name;
+  if (values.description !== undefined) patch.description = values.description;
+  if (values.category !== undefined) patch.category = values.category;
+  if (values.main_image_url !== undefined) patch.image_url = values.main_image_url;
+  if (values.status !== undefined) patch.is_active = values.status === 'Actif';
+  if (enterprise) {
+    patch.vendor_name = enterprise.name;
+    patch.vendor_type = 'enterprise';
+    patch.vendor_phone = enterprise.phone;
+    patch.vendor_email = enterprise.email;
+    patch.vendor_city = enterprise.city;
+    patch.vendor_verified = enterprise.verified;
+  }
 
   const { data, error } = await supabase
     .from('products')
-    .update(values)
+    .update(patch)
     .eq('id', id)
-    .eq('owner_id', user.id)
+    .eq('vendor_id', user.id)
     .select('*')
     .single();
-
   if (error) throw error;
-  return data as Product;
+  return { ...values, id: data.id, owner_id: user.id, enterprise_id: enterprise?.id ?? '', views: 0, created_at: data.created_at, updated_at: data.updated_at } as Product;
 }
 
 export async function deleteProduct(id: string) {
-  const supabase = createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError) throw authError;
-  if (!user) throw new Error('Utilisateur non connecté');
-
-  const { error } = await supabase
-    .from('products')
-    .delete()
-    .eq('id', id)
-    .eq('owner_id', user.id);
-
+  const { supabase, user } = await getAuthenticatedUser();
+  const { error } = await supabase.from('products').delete().eq('id', id).eq('vendor_id', user.id);
   if (error) throw error;
+}
+
+export async function uploadImage(file: File, folder: 'products' | 'enterprise') {
+  const { supabase, user } = await getAuthenticatedUser();
+  const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const bucket = folder === 'products' ? 'article-images' : 'profile-photos';
+  const path = `${user.id}/${folder}/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: false, contentType: file.type });
+  if (error) throw error;
+  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
