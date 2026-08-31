@@ -30,6 +30,25 @@ function mapUser(user: User): AuthUser {
   };
 }
 
+async function ensureProfile(user: User) {
+  const supabase = createClient();
+  const metadata = user.user_metadata ?? {};
+  const fullName = [metadata.first_name, metadata.last_name].filter(Boolean).join(' ').trim() || user.email?.split('@')[0] || 'Utilisateur';
+  const accountType = metadata.account_type === 'enterprise' ? 'enterprise' : 'individual';
+
+  const { error } = await supabase.from('profiles').upsert({
+    id: user.id,
+    email: user.email ?? '',
+    full_name: fullName,
+    phone: metadata.phone ?? '',
+    account_type: accountType,
+  }, { onConflict: 'id' });
+
+  if (error) {
+    console.warn('Impossible de synchroniser le profil:', error.message);
+  }
+}
+
 export function useAuth() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>('visiteur');
@@ -40,30 +59,39 @@ export function useAuth() {
     const supabase = createClient();
     let mounted = true;
 
-    supabase.auth.getUser().then(({ data }) => {
+    const applyUser = async (authUser: User) => {
+      await ensureProfile(authUser);
       if (!mounted) return;
-      if (data.user) {
-        const mapped = mapUser(data.user);
-        setIsLoggedIn(true);
-        setUserRole(mapped.role);
-        setUser(mapped);
-      }
+      const mapped = mapUser(authUser);
+      setIsLoggedIn(true);
+      setUserRole(mapped.role);
+      setUser(mapped);
       setLoading(false);
+    };
+
+    supabase.auth.getUser().then(async ({ data, error }) => {
+      if (!mounted) return;
+      if (error) {
+        setLoading(false);
+        return;
+      }
+      if (data.user) {
+        await applyUser(data.user);
+      } else {
+        setLoading(false);
+      }
     }).catch(() => mounted && setLoading(false));
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
       if (session?.user) {
-        const mapped = mapUser(session.user);
-        setIsLoggedIn(true);
-        setUserRole(mapped.role);
-        setUser(mapped);
+        void applyUser(session.user);
       } else {
         setIsLoggedIn(false);
         setUserRole('visiteur');
         setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => {
@@ -73,7 +101,6 @@ export function useAuth() {
   }, []);
 
   const login = useCallback((userData: AuthUser) => {
-    // Kept for backwards compatibility with existing components.
     setIsLoggedIn(true);
     setUserRole(userData.role);
     setUser(userData);
