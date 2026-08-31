@@ -1,0 +1,65 @@
+name: Connect Mon Entreprise
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Connect existing enterprise page to Supabase
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('src/app/member-dashboard/components/MonEntreprisePage.tsx')
+          s = p.read_text(encoding='utf-8')
+
+          s = s.replace("import React, { useState, useRef, useCallback } from 'react';", "import React, { useEffect, useState, useRef, useCallback } from 'react';")
+          s = s.replace("import AppImage from '@/components/ui/AppImage';", "import AppImage from '@/components/ui/AppImage';\nimport { createClient } from '@/lib/supabase/client';")
+
+          s = s.replace("  const [enterprises, setEnterprises] = useState<Enterprise[]>(initialEnterprises);", "  const [enterprises, setEnterprises] = useState<Enterprise[]>([]);\n  const [loadingEnterprises, setLoadingEnterprises] = useState(true);")
+
+          marker = "  const selectedEnterprise = enterprises.find((e) => e.id === selectedId) ?? null;\n"
+          effect = '''\n  useEffect(() => {\n    let cancelled = false;\n    const loadEnterprises = async () => {\n      try {\n        const supabase = createClient();\n        const { data: { user } } = await supabase.auth.getUser();\n        if (!user) {\n          if (!cancelled) setEnterprises([]);\n          return;\n        }\n\n        const { data, error } = await supabase\n          .from('enterprises')\n          .select('id, owner_id, name, description, logo_url, cover_url, category, city, address, phone, email, website, is_verified, employee_count, founded_year')\n          .eq('owner_id', user.id)\n          .order('created_at', { ascending: false });\n\n        if (error) throw error;\n\n        const mapped: Enterprise[] = (data ?? []).map((row: any) => ({\n          id: row.id,\n          name: row.name ?? '',\n          category: row.category ?? '',\n          location: [row.city, row.address].filter(Boolean).join(', '),\n          phone: row.phone ?? '',\n          email: row.email ?? '',\n          website: row.website ?? '',\n          description: row.description ?? '',\n          founded: row.founded_year ? String(row.founded_year) : '',\n          employees: row.employee_count ? String(row.employee_count) : '',\n          logo: row.logo_url || DEFAULT_LOGO,\n          cover: row.cover_url || DEFAULT_COVER,\n          verified: !!row.is_verified,\n          views: 0,\n          followers: 0,\n          rating: 0,\n        }));\n\n        if (!cancelled) setEnterprises(mapped);\n      } catch (error: any) {\n        console.error('Erreur de chargement des entreprises:', error);\n        if (!cancelled) alert(`Impossible de charger les entreprises : ${error?.message || 'erreur inconnue'}`);\n      } finally {\n        if (!cancelled) setLoadingEnterprises(false);\n      }\n    };\n\n    loadEnterprises();\n    return () => { cancelled = true; };\n  }, []);\n'''
+          if marker not in s:
+              raise SystemExit('marker selectedEnterprise not found')
+          s = s.replace(marker, marker + effect, 1)
+
+          old_submit = '''  const handleSubmit = () => {\n    if (!validate()) return;\n    if (editingId) {\n      setEnterprises((prev) =>\n        prev.map((e) =>\n          e.id === editingId ? { ...e, ...form } : e\n        )\n      );\n      showSuccess('Entreprise modifiée avec succès !');\n      setSelectedId(editingId);\n      setViewMode('detail');\n    } else {\n      const newEnt: Enterprise = {\n        id: Date.now().toString(),\n        ...form,\n        verified: false,\n        views: 0,\n        followers: 0,\n        rating: 0,\n      };\n      setEnterprises((prev) => [...prev, newEnt]);\n      showSuccess('Entreprise créée avec succès !');\n      setViewMode('list');\n    }\n  };\n'''
+          new_submit = '''  const handleSubmit = async () => {\n    if (!validate()) return;\n\n    try {\n      const supabase = createClient();\n      const { data: { user } } = await supabase.auth.getUser();\n      if (!user) {\n        alert('Votre session a expiré. Veuillez vous reconnecter.');\n        return;\n      }\n\n      const employeeCount = Number.parseInt(form.employees, 10);\n      const foundedYear = Number.parseInt(form.founded, 10);\n      const payload = {\n        owner_id: user.id,\n        name: form.name.trim(),\n        slug: form.name.trim().toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),\n        category: form.category,\n        city: form.location.trim(),\n        address: '',\n        phone: form.phone.trim(),\n        email: form.email.trim(),\n        website: form.website.trim(),\n        description: form.description.trim(),\n        logo_url: form.logo || DEFAULT_LOGO,\n        cover_url: form.cover || DEFAULT_COVER,\n        employee_count: Number.isFinite(employeeCount) ? employeeCount : 0,\n        founded_year: Number.isFinite(foundedYear) ? foundedYear : null,\n      };\n\n      if (editingId) {\n        const { error } = await supabase\n          .from('enterprises')\n          .update(payload)\n          .eq('id', editingId)\n          .eq('owner_id', user.id);\n        if (error) throw error;\n\n        const updated: Enterprise = {\n          id: editingId, ...form, verified: enterprises.find((e) => e.id === editingId)?.verified ?? false,\n          views: enterprises.find((e) => e.id === editingId)?.views ?? 0,\n          followers: enterprises.find((e) => e.id === editingId)?.followers ?? 0,\n          rating: enterprises.find((e) => e.id === editingId)?.rating ?? 0,\n        };\n        setEnterprises((prev) => prev.map((e) => e.id === editingId ? updated : e));\n        showSuccess('Entreprise modifiée avec succès !');\n        setSelectedId(editingId);\n        setViewMode('detail');\n      } else {\n        const { data, error } = await supabase\n          .from('enterprises')\n          .insert(payload)\n          .select('id, name, description, logo_url, cover_url, category, city, address, phone, email, website, is_verified, employee_count, founded_year')\n          .single();\n        if (error) throw error;\n\n        const newEnt: Enterprise = {\n          id: data.id, name: data.name ?? '', category: data.category ?? '',\n          location: [data.city, data.address].filter(Boolean).join(', '), phone: data.phone ?? '',\n          email: data.email ?? '', website: data.website ?? '', description: data.description ?? '',\n          founded: data.founded_year ? String(data.founded_year) : '', employees: data.employee_count ? String(data.employee_count) : '',\n          logo: data.logo_url || DEFAULT_LOGO, cover: data.cover_url || DEFAULT_COVER,\n          verified: !!data.is_verified, views: 0, followers: 0, rating: 0,\n        };\n        setEnterprises((prev) => [newEnt, ...prev]);\n        showSuccess('Entreprise créée avec succès !');\n        setViewMode('list');\n      }\n    } catch (error: any) {\n      console.error('Erreur Supabase entreprise:', error);\n      alert(`Enregistrement impossible : ${error?.message || 'erreur inconnue'}`);\n    }\n  };\n'''
+          if old_submit not in s:
+              raise SystemExit('old handleSubmit not found')
+          s = s.replace(old_submit, new_submit, 1)
+
+          old_delete = '''  const handleDelete = (id: string) => {\n    setEnterprises((prev) => prev.filter((e) => e.id !== id));\n    setDeleteConfirm(null);\n    if (selectedId === id) setViewMode('list');\n    showSuccess('Entreprise supprimée.');\n  };\n'''
+          new_delete = '''  const handleDelete = async (id: string) => {\n    try {\n      const supabase = createClient();\n      const { data: { user } } = await supabase.auth.getUser();\n      if (!user) {\n        alert('Votre session a expiré. Veuillez vous reconnecter.');\n        return;\n      }\n\n      const { error } = await supabase\n        .from('enterprises')\n        .delete()\n        .eq('id', id)\n        .eq('owner_id', user.id);\n      if (error) throw error;\n\n      setEnterprises((prev) => prev.filter((e) => e.id !== id));\n      setDeleteConfirm(null);\n      if (selectedId === id) setViewMode('list');\n      showSuccess('Entreprise supprimée.');\n    } catch (error: any) {\n      console.error('Erreur Supabase suppression entreprise:', error);\n      alert(`Suppression impossible : ${error?.message || 'erreur inconnue'}`);\n    }\n  };\n'''
+          if old_delete not in s:
+              raise SystemExit('old handleDelete not found')
+          s = s.replace(old_delete, new_delete, 1)
+
+          # Loading state: keep the existing visual language, without changing the layout/design.
+          marker2 = "  // ── LIST VIEW ──\n"
+          loading = '''  if (loadingEnterprises) {\n    return <div className="space-y-5"><div className="text-sm text-muted-foreground">Chargement de vos entreprises...</div></div>;\n  }\n\n'''
+          if marker2 not in s:
+              raise SystemExit('list marker not found')
+          s = s.replace(marker2, loading + marker2, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+      - name: Commit patched page and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app/member-dashboard/components/MonEntreprisePage.tsx
+          git commit -m "feat: connect Mon Entreprise to existing Supabase enterprises table" || true
+          git rm .github/workflows/connect-mon-entreprise.yml
+          git commit -m "chore: remove temporary connection workflow" || true
+          git push
