@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   PlusIcon,
   PencilSquareIcon,
@@ -24,6 +24,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon, StarIcon as StarSolid } from '@heroicons/react/24/solid';
 import AppImage from '@/components/ui/AppImage';
+import { createClient } from '@/lib/supabase/client';
 
 interface Enterprise {
   id: string;
@@ -378,7 +379,8 @@ function AddProductToEnterpriseModal({
 }
 
 export default function MonEntreprisePage() {
-  const [enterprises, setEnterprises] = useState<Enterprise[]>(initialEnterprises);
+  const [enterprises, setEnterprises] = useState<Enterprise[]>([]);
+  const [loadingEnterprises, setLoadingEnterprises] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -393,6 +395,57 @@ export default function MonEntreprisePage() {
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const selectedEnterprise = enterprises.find((e) => e.id === selectedId) ?? null;
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadEnterprises = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          if (!cancelled) setEnterprises([]);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('enterprises')
+          .select('id, owner_id, name, description, logo_url, cover_url, category, city, address, phone, email, website, is_verified, employee_count, founded_year')
+          .eq('owner_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const mapped: Enterprise[] = (data ?? []).map((row: any) => ({
+          id: row.id,
+          name: row.name ?? '',
+          category: row.category ?? '',
+          location: [row.city, row.address].filter(Boolean).join(', '),
+          phone: row.phone ?? '',
+          email: row.email ?? '',
+          website: row.website ?? '',
+          description: row.description ?? '',
+          founded: row.founded_year ? String(row.founded_year) : '',
+          employees: row.employee_count ? String(row.employee_count) : '',
+          logo: row.logo_url || DEFAULT_LOGO,
+          cover: row.cover_url || DEFAULT_COVER,
+          verified: !!row.is_verified,
+          views: 0,
+          followers: 0,
+          rating: 0,
+        }));
+
+        if (!cancelled) setEnterprises(mapped);
+      } catch (error: any) {
+        console.error('Erreur de chargement des entreprises:', error);
+        if (!cancelled) alert(`Impossible de charger les entreprises : ${error?.message || 'erreur inconnue'}`);
+      } finally {
+        if (!cancelled) setLoadingEnterprises(false);
+      }
+    };
+
+    loadEnterprises();
+    return () => { cancelled = true; };
+  }, []);
 
   const showSuccess = (msg: string) => {
     setSuccessMsg(msg);
@@ -457,38 +510,109 @@ export default function MonEntreprisePage() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    if (editingId) {
-      setEnterprises((prev) =>
-        prev.map((e) =>
-          e.id === editingId ? { ...e, ...form } : e
-        )
-      );
-      showSuccess('Entreprise modifiée avec succès !');
-      setSelectedId(editingId);
-      setViewMode('detail');
-    } else {
-      const newEnt: Enterprise = {
-        id: Date.now().toString(),
-        ...form,
-        verified: false,
-        views: 0,
-        followers: 0,
-        rating: 0,
+
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert('Votre session a expiré. Veuillez vous reconnecter.');
+        return;
+      }
+
+      const employeeCount = Number.parseInt(form.employees, 10);
+      const foundedYear = Number.parseInt(form.founded, 10);
+      const payload = {
+        owner_id: user.id,
+        name: form.name.trim(),
+        slug: form.name.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
+        category: form.category,
+        city: form.location.trim(),
+        address: '',
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        website: form.website.trim(),
+        description: form.description.trim(),
+        logo_url: form.logo || DEFAULT_LOGO,
+        cover_url: form.cover || DEFAULT_COVER,
+        employee_count: Number.isFinite(employeeCount) ? employeeCount : 0,
+        founded_year: Number.isFinite(foundedYear) ? foundedYear : null,
       };
-      setEnterprises((prev) => [...prev, newEnt]);
-      showSuccess('Entreprise créée avec succès !');
-      setViewMode('list');
+
+      if (editingId) {
+        const { error } = await supabase
+          .from('enterprises')
+          .update(payload)
+          .eq('id', editingId)
+          .eq('owner_id', user.id);
+        if (error) throw error;
+
+        const updated: Enterprise = {
+          id: editingId, ...form, verified: enterprises.find((e) => e.id === editingId)?.verified ?? false,
+          views: enterprises.find((e) => e.id === editingId)?.views ?? 0,
+          followers: enterprises.find((e) => e.id === editingId)?.followers ?? 0,
+          rating: enterprises.find((e) => e.id === editingId)?.rating ?? 0,
+        };
+        setEnterprises((prev) => prev.map((e) => e.id === editingId ? updated : e));
+        showSuccess('Entreprise modifiée avec succès !');
+        setSelectedId(editingId);
+        setViewMode('detail');
+      } else {
+        const { data, error } = await supabase
+          .from('enterprises')
+          .insert(payload)
+          .select('id, name, description, logo_url, cover_url, category, city, address, phone, email, website, is_verified, employee_count, founded_year')
+          .single();
+        if (error) throw error;
+
+        const newEnt: Enterprise = {
+          id: data.id, name: data.name ?? '', category: data.category ?? '',
+          location: [data.city, data.address].filter(Boolean).join(', '), phone: data.phone ?? '',
+          email: data.email ?? '', website: data.website ?? '', description: data.description ?? '',
+          founded: data.founded_year ? String(data.founded_year) : '', employees: data.employee_count ? String(data.employee_count) : '',
+          logo: data.logo_url || DEFAULT_LOGO, cover: data.cover_url || DEFAULT_COVER,
+          verified: !!data.is_verified, views: 0, followers: 0, rating: 0,
+        };
+        setEnterprises((prev) => [newEnt, ...prev]);
+        showSuccess('Entreprise créée avec succès !');
+        setViewMode('list');
+      }
+    } catch (error: any) {
+      console.error('Erreur Supabase entreprise:', error);
+      alert(`Enregistrement impossible : ${error?.message || 'erreur inconnue'}`);
     }
   };
 
-  const handleDelete = (id: string) => {
-    setEnterprises((prev) => prev.filter((e) => e.id !== id));
-    setDeleteConfirm(null);
-    if (selectedId === id) setViewMode('list');
-    showSuccess('Entreprise supprimée.');
+  const handleDelete = async (id: string) => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert('Votre session a expiré. Veuillez vous reconnecter.');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('enterprises')
+        .delete()
+        .eq('id', id)
+        .eq('owner_id', user.id);
+      if (error) throw error;
+
+      setEnterprises((prev) => prev.filter((e) => e.id !== id));
+      setDeleteConfirm(null);
+      if (selectedId === id) setViewMode('list');
+      showSuccess('Entreprise supprimée.');
+    } catch (error: any) {
+      console.error('Erreur Supabase suppression entreprise:', error);
+      alert(`Suppression impossible : ${error?.message || 'erreur inconnue'}`);
+    }
   };
+
+  if (loadingEnterprises) {
+    return <div className="space-y-5"><div className="text-sm text-muted-foreground">Chargement de vos entreprises...</div></div>;
+  }
 
   // ── LIST VIEW ──
   if (viewMode === 'list') {
