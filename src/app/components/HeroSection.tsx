@@ -2,6 +2,7 @@
 import React from 'react';
 import AppImage from '@/components/ui/AppImage';
 import Link from 'next/link';
+import { useAuth } from '@/lib/useAuth';
 
 const trustBadges = [
   {
@@ -43,6 +44,8 @@ const trustBadges = [
 ];
 
 export default function HeroSection() {
+  const { isLoggedIn } = useAuth();
+
   return (
     <section className="relative flex flex-col overflow-hidden" style={{ minHeight: '520px' }}>
       {/* Background image */}
@@ -93,12 +96,21 @@ export default function HeroSection() {
               >
                 Explorer le Marketplace
               </Link>
-              <Link
-                href="/register"
-                className="inline-flex items-center px-6 py-3 rounded font-semibold text-sm text-white border border-white/60 hover:bg-white/10 transition-colors"
-              >
-                Devenir Fournisseur
-              </Link>
+              {isLoggedIn ? (
+                <Link
+                  href="/store"
+                  className="inline-flex items-center px-6 py-3 rounded font-semibold text-sm text-white border border-white/60 hover:bg-white/10 transition-colors"
+                >
+                  Store
+                </Link>
+              ) : (
+                <Link
+                  href="/register"
+                  className="inline-flex items-center px-6 py-3 rounded font-semibold text-sm text-white border border-white/60 hover:bg-white/10 transition-colors"
+                >
+                  Devenir Fournisseur
+                </Link>
+              )}
             </div>
           </div>
         </div>
