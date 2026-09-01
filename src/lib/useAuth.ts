@@ -15,16 +15,33 @@ export interface AuthUser {
   isVerified?: boolean;
 }
 
-function mapUser(user: User): AuthUser {
+async function getRoleForUser(user: User): Promise<UserRole> {
+  const supabase = createClient();
   const metadata = user.user_metadata ?? {};
-  const accountType = metadata.account_type === 'enterprise' ? 'entreprise' : 'client';
+
+  // A user who has published at least one product is treated as a supplier.
+  // Otherwise an authenticated individual remains a client. Enterprise
+  // accounts keep their enterprise role until they have products, at which
+  // point the supplier status takes precedence for the dashboard label.
+  const { count, error } = await supabase
+    .from('products')
+    .select('id', { count: 'exact', head: true })
+    .eq('vendor_id', user.id);
+
+  if (!error && (count ?? 0) > 0) return 'fournisseur';
+  if (metadata.account_type === 'enterprise') return 'entreprise';
+  return 'client';
+}
+
+function mapUser(user: User, role: UserRole): AuthUser {
+  const metadata = user.user_metadata ?? {};
   const name = [metadata.first_name, metadata.last_name].filter(Boolean).join(' ') || user.email?.split('@')[0] || 'Utilisateur';
 
   return {
     id: user.id,
     name,
     email: user.email ?? '',
-    role: accountType,
+    role,
     avatarUrl: metadata.avatar_url,
     isVerified: Boolean(user.email_confirmed_at),
   };
@@ -61,8 +78,9 @@ export function useAuth() {
 
     const applyUser = async (authUser: User) => {
       await ensureProfile(authUser);
+      const role = await getRoleForUser(authUser);
       if (!mounted) return;
-      const mapped = mapUser(authUser);
+      const mapped = mapUser(authUser, role);
       setIsLoggedIn(true);
       setUserRole(mapped.role);
       setUser(mapped);
