@@ -21,15 +21,48 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
   const pathname = request.nextUrl.pathname;
   const protectedPath = pathname.startsWith('/member-dashboard') || pathname.startsWith('/dashboard');
 
-  if (protectedPath && !user) {
+  if (protectedPath && (authError || !user)) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/login';
+    loginUrl.search = '';
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (protectedPath && user) {
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id,is_active')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError || !profile || profile.is_active !== true) {
+      await supabase.auth.signOut();
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = '/login';
+      loginUrl.search = '';
+      loginUrl.searchParams.set('redirect', pathname);
+      loginUrl.searchParams.set('reason', 'session_required');
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  if ((pathname === '/login' || pathname === '/register') && user) {
+    const profileResult = await supabase
+      .from('profiles')
+      .select('is_active')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!profileResult.error && profileResult.data?.is_active === true) {
+      const redirect = request.nextUrl.searchParams.get('redirect');
+      const destination = redirect && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/member-dashboard';
+      return NextResponse.redirect(new URL(destination, request.url));
+    }
   }
 
   return response;
