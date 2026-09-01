@@ -87,17 +87,6 @@ const navModules: NavModule[] = [
     ],
   },
   {
-    label: 'Emploi',
-    href: '#emploi',
-    icon: BriefcaseIcon,
-    visibleTo: ALL_ROLES,
-    children: [
-      { label: 'Offres d\'emploi', href: '#emploi', description: 'Trouver un poste' },
-      { label: 'Publier une offre', href: '#emploi?action=publier', description: 'Recruter des talents' },
-      { label: 'Candidatures', href: '#emploi?tab=candidatures', description: 'Suivre mes candidatures' },
-    ],
-  },
-  {
     label: 'Services',
     href: '/services',
     icon: WrenchScrewdriverIcon,
@@ -108,6 +97,9 @@ const navModules: NavModule[] = [
       { label: 'Agences', href: '/services?type=Agence', description: 'Équipes professionnelles' },
       { label: 'Consultants', href: '/services?type=Consultant', description: 'Experts sectoriels' },
       { label: 'Techniciens', href: '/services?type=Technicien', description: 'Interventions techniques' },
+      { label: 'Emplois', href: '#emploi', description: 'Trouver un poste' },
+      { label: 'Publier une offre', href: '#emploi?action=publier', description: 'Recruter des talents' },
+      { label: 'Candidatures', href: '#emploi?tab=candidatures', description: 'Suivre mes candidatures' },
     ],
   },
   {
@@ -199,8 +191,8 @@ export default function Header() {
   }, [searchOpen]);
 
   const visibleModules = navModules.filter((m) => m.visibleTo.includes(userRole));
-  const primaryNav = visibleModules.slice(0, 6);
-  const secondaryNav = visibleModules.slice(6);
+  const primaryNav = visibleModules.slice(0, 5);
+  const secondaryNav = visibleModules.slice(5);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-dark border-b border-border">
