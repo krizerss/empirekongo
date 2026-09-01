@@ -17,5 +17,11 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error.message)}`, url.origin));
   }
 
+  // For password recovery, the exchanged session is intentionally kept in
+  // the browser so /auth/reset-password can call updateUser({ password }).
+  if (next === '/auth/reset-password') {
+    return NextResponse.redirect(new URL('/auth/reset-password', url.origin));
+  }
+
   return NextResponse.redirect(new URL(next, url.origin));
 }
