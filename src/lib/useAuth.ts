@@ -12,6 +12,7 @@ export interface AuthUser {
   email: string;
   role: UserRole;
   avatarUrl?: string;
+  coverUrl?: string;
   isVerified?: boolean;
 }
 
@@ -24,10 +25,18 @@ async function getRoleForUser(user: User): Promise<UserRole> {
   return 'client';
 }
 
-function mapUser(user: User, role: UserRole): AuthUser {
+function mapUser(user: User, role: UserRole, profile?: { avatar_url?: string | null; cover_url?: string | null }): AuthUser {
   const metadata = user.user_metadata ?? {};
   const name = [metadata.first_name, metadata.last_name].filter(Boolean).join(' ') || user.email?.split('@')[0] || 'Utilisateur';
-  return { id: user.id, name, email: user.email ?? '', role, avatarUrl: metadata.avatar_url, isVerified: Boolean(user.email_confirmed_at) };
+  return {
+    id: user.id,
+    name,
+    email: user.email ?? '',
+    role,
+    avatarUrl: profile?.avatar_url ?? metadata.avatar_url ?? undefined,
+    coverUrl: profile?.cover_url ?? metadata.cover_url ?? undefined,
+    isVerified: Boolean(user.email_confirmed_at),
+  };
 }
 
 async function ensureProfile(user: User) {
@@ -35,8 +44,12 @@ async function ensureProfile(user: User) {
   const metadata = user.user_metadata ?? {};
   const fullName = [metadata.first_name, metadata.last_name].filter(Boolean).join(' ').trim() || user.email?.split('@')[0] || 'Utilisateur';
   const accountType = metadata.account_type === 'enterprise' ? 'enterprise' : 'individual';
-  const { error } = await supabase.from('profiles').upsert({ id: user.id, email: user.email ?? '', full_name: fullName, phone: metadata.phone ?? '', account_type: accountType }, { onConflict: 'id' });
-  if (error) console.warn('Impossible de synchroniser le profil:', error.message);
+  const { data, error } = await supabase.from('profiles').upsert({ id: user.id, email: user.email ?? '', full_name: fullName, phone: metadata.phone ?? '', account_type: accountType }, { onConflict: 'id' }).select('avatar_url,cover_url').single();
+  if (error) {
+    console.warn('Impossible de synchroniser le profil:', error.message);
+    return null;
+  }
+  return data;
 }
 
 function updateNotificationBadges(count: number) {
@@ -81,10 +94,10 @@ export function useAuth() {
     };
 
     const applyUser = async (authUser: User) => {
-      await ensureProfile(authUser);
+      const profile = await ensureProfile(authUser);
       const role = await getRoleForUser(authUser);
       if (!mounted) return;
-      const mapped = mapUser(authUser, role);
+      const mapped = mapUser(authUser, role, profile ?? undefined);
       setIsLoggedIn(true);
       setUserRole(mapped.role);
       setUser(mapped);
