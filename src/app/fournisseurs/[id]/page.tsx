@@ -38,11 +38,18 @@ export default async function SupplierProfilePage({ params }: PageProps) {
     const supabase = await createClient();
     const { data: enterprise, error } = await supabase
       .from('enterprises')
-      .select('id,name,category,description,city,logo_url,cover_url,verified,is_verified,created_at')
+      .select('id,owner_id,name,category,description,city,address,phone,email,website,logo_url,cover_url,verified,is_verified,employee_count,founded_year,created_at')
       .eq('id', id)
       .maybeSingle();
 
     if (!error && enterprise) {
+      const { data: products } = await supabase
+        .from('products')
+        .select('id,name,price,unit,image_url,rating')
+        .eq('vendor_id', enterprise.owner_id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
       const supplier = {
         ...fallback,
         id: Number(enterprise.id) || fallback.id,
@@ -50,12 +57,26 @@ export default async function SupplierProfilePage({ params }: PageProps) {
         category: enterprise.category || fallback.category,
         description: enterprise.description || fallback.description,
         city: enterprise.city || fallback.city,
+        address: enterprise.address || '',
+        phone: enterprise.phone || '',
+        email: enterprise.email || '',
+        website: enterprise.website || '',
         logo: enterprise.logo_url || fallback.logo,
         banner: enterprise.cover_url || fallback.banner,
         logoAlt: `Logo ${enterprise.name || fallback.name}`,
         bannerAlt: `Photo de couverture de ${enterprise.name || fallback.name}`,
-        verified: Boolean(enterprise.verified ?? enterprise.is_verified ?? fallback.verified),
-        founded: enterprise.created_at ? new Date(enterprise.created_at).getFullYear().toString() : fallback.founded
+        verified: Boolean(enterprise.verified ?? enterprise.is_verified ?? false),
+        founded: enterprise.founded_year?.toString() || (enterprise.created_at ? new Date(enterprise.created_at).getFullYear().toString() : fallback.founded),
+        employees: enterprise.employee_count ? enterprise.employee_count.toString() : '—',
+        products: (products ?? []).map((product: any) => ({
+          id: Number(product.id) || 0,
+          name: product.name || 'Produit sans nom',
+          price: product.price || '—',
+          unit: product.unit || '',
+          image: product.image_url || '/assets/images/no_image.png',
+          alt: product.name || 'Produit',
+          rating: Number(product.rating ?? 0),
+        })),
       };
 
       return <SupplierClient supplier={supplier} />;
