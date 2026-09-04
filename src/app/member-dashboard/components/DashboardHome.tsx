@@ -1,11 +1,13 @@
 'use client';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   CheckCircleIcon,
   ChatBubbleOvalLeftIcon,
   BuildingOfficeIcon,
   ArrowTrendingUpIcon,
 } from '@heroicons/react/24/outline';
+import { createClient } from '@/lib/supabase/client';
+import { getMyProductsCount } from '@/lib/supabase/database';
 
 interface DashboardHomeProps {
   onNavigate?: (tab: string) => void;
@@ -14,7 +16,7 @@ interface DashboardHomeProps {
 const activities = [
   {
     id: 1,
-    text: "Votre produit \'Café Robusta\' a été approuvé",
+    text: "Votre produit 'Café Robusta' a été approuvé",
     time: 'Il y a 2 heures',
     icon: CheckCircleIcon,
     iconColor: 'text-green-400',
@@ -30,7 +32,7 @@ const activities = [
   },
   {
     id: 3,
-    text: "Votre entreprise a reçu 21 vues aujourd\'hui",
+    text: "Votre entreprise a reçu 21 vues aujourd'hui",
     time: 'Il y a 1 jour',
     icon: BuildingOfficeIcon,
     iconColor: 'text-primary',
@@ -147,6 +149,56 @@ function LineChart() {
 }
 
 export default function DashboardHome({ onNavigate }: DashboardHomeProps) {
+  const [productCount, setProductCount] = useState<number | null>(null);
+  const [productCountError, setProductCountError] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    let mounted = true;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const loadCount = async () => {
+      try {
+        const count = await getMyProductsCount();
+        if (mounted) {
+          setProductCount(count);
+          setProductCountError(false);
+        }
+      } catch {
+        if (mounted) setProductCountError(true);
+      }
+    };
+
+    const subscribe = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (!mounted || error || !data.user) return;
+
+      channel = supabase
+        .channel(`dashboard-products:${data.user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'products',
+            filter: `vendor_id=eq.${data.user.id}`,
+          },
+          () => {
+            void loadCount();
+          }
+        )
+        .subscribe();
+    };
+
+    void loadCount();
+    void subscribe();
+
+    return () => {
+      mounted = false;
+      if (channel) void channel.unsubscribe();
+    };
+  }, [supabase]);
+
   return (
     <div>
       {/* Welcome */}
@@ -163,12 +215,14 @@ export default function DashboardHome({ onNavigate }: DashboardHomeProps) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="stat-card">
           <p className="text-xs text-muted-foreground font-medium mb-3">Produits</p>
-          <p className="text-3xl font-extrabold text-foreground mb-1">12</p>
+          <p className="text-3xl font-extrabold text-foreground mb-1">
+            {productCount === null ? '—' : productCount}
+          </p>
           <button
             onClick={() => onNavigate?.('products')}
             className="text-xs text-primary hover:underline text-left"
           >
-            Voir mes produits
+            {productCountError ? 'Vérifier mes produits' : 'Voir mes produits'}
           </button>
         </div>
         <div className="stat-card">
