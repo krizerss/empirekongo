@@ -16,8 +16,25 @@ interface Supplier {
 
 const FALLBACK_IMAGE = '/assets/images/no_image.png';
 const categories = ['Toutes', 'Agriculture', 'Agroalimentaire', 'BTP & Matériaux', 'Énergie', 'Technologie', 'Mode & Beauté', 'Élevage', 'Santé'];
-const types = ['Tous', 'Producteur', 'Grossiste', 'Importateur', 'Fabricant', 'Distributeur', 'Entreprise'];
+const types = ['Tous', 'Producteur', 'Grossiste', 'Importateur', 'Fabricant', 'Distributeur'];
+const supplierTypes = new Set(['producteur', 'grossiste', 'importateur', 'fabricant', 'distributeur']);
 const cities = ['Toutes', 'Kinshasa', 'Boma', 'Matadi', 'Lubumbashi', 'Goma'];
+
+function normalizeType(value: unknown): string {
+  return String(value ?? '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function displayType(value: unknown): string {
+  const normalized = normalizeType(value);
+  const labels: Record<string, string> = {
+    producteur: 'Producteur',
+    grossiste: 'Grossiste',
+    importateur: 'Importateur',
+    fabricant: 'Fabricant',
+    distributeur: 'Distributeur',
+  };
+  return labels[normalized] || 'Fournisseur';
+}
 
 export default function FournisseursPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -44,46 +61,58 @@ export default function FournisseursPage() {
         if (error) throw error;
         if (!active) return;
 
-        // Même relation que sur le profil entreprise : products.vendor_id = enterprises.owner_id.
-        // Un seul appel est effectué pour compter les produits actifs de toutes les entreprises.
         const ownerIds = (data ?? []).map((enterprise: any) => enterprise.owner_id).filter(Boolean);
         const productCounts = new Map<string, number>();
+        const supplierTypesByOwner = new Map<string, Set<string>>();
 
         if (ownerIds.length > 0) {
           const { data: products, error: productsError } = await supabase
             .from('products')
-            .select('vendor_id')
+            .select('vendor_id,vendor_type')
             .in('vendor_id', ownerIds)
             .eq('is_active', true);
 
           if (productsError) {
-            console.error('Erreur lors du comptage des produits:', productsError);
+            console.error('Erreur lors du chargement des produits fournisseurs:', productsError);
           } else {
             (products ?? []).forEach((product: any) => {
               const vendorId = String(product.vendor_id);
               productCounts.set(vendorId, (productCounts.get(vendorId) ?? 0) + 1);
+              const type = normalizeType(product.vendor_type);
+              if (supplierTypes.has(type)) {
+                if (!supplierTypesByOwner.has(vendorId)) supplierTypesByOwner.set(vendorId, new Set());
+                supplierTypesByOwner.get(vendorId)!.add(type);
+              }
             });
           }
         }
 
-        const mapped: Supplier[] = (data ?? []).map((enterprise: any) => ({
-          id: String(enterprise.id),
-          name: enterprise.name || 'Entreprise sans nom',
-          logo: enterprise.logo_url || FALLBACK_IMAGE,
-          logoAlt: `Logo ${enterprise.name || 'de l’entreprise'}`,
-          cover: enterprise.cover_url || FALLBACK_IMAGE,
-          coverAlt: `Photo de couverture de ${enterprise.name || 'l’entreprise'}`,
-          category: enterprise.category || 'Entreprise',
-          city: enterprise.city || 'RDC',
-          description: enterprise.description || 'Aucune description disponible.',
-          products: enterprise.owner_id ? (productCounts.get(String(enterprise.owner_id)) ?? 0) : 0,
-          rating: 0,
-          reviews: 0,
-          verified: Boolean(enterprise.verified ?? enterprise.is_verified),
-          type: 'Entreprise',
-          founded: enterprise.created_at ? new Date(enterprise.created_at).getFullYear().toString() : '—'
-        }));
-        setSuppliers(mapped);
+        const mapped: Supplier[] = (data ?? []).map((enterprise: any) => {
+          const ownerId = enterprise.owner_id ? String(enterprise.owner_id) : '';
+          const enterpriseTypes = supplierTypesByOwner.get(ownerId);
+          const type = enterpriseTypes?.values().next().value || '';
+          return {
+            id: String(enterprise.id),
+            name: enterprise.name || 'Entreprise sans nom',
+            logo: enterprise.logo_url || FALLBACK_IMAGE,
+            logoAlt: `Logo ${enterprise.name || 'de l’entreprise'}`,
+            cover: enterprise.cover_url || FALLBACK_IMAGE,
+            coverAlt: `Photo de couverture de ${enterprise.name || 'l’entreprise'}`,
+            category: enterprise.category || 'Entreprise',
+            city: enterprise.city || 'RDC',
+            description: enterprise.description || 'Aucune description disponible.',
+            products: ownerId ? (productCounts.get(ownerId) ?? 0) : 0,
+            rating: 0,
+            reviews: 0,
+            verified: Boolean(enterprise.verified ?? enterprise.is_verified),
+            type: displayType(type),
+            founded: enterprise.created_at ? new Date(enterprise.created_at).getFullYear().toString() : '—'
+          };
+        });
+
+        // Une entreprise n'est fournisseur que si elle possède au moins un produit actif
+        // déclaré avec un type d'approvisionnement reconnu.
+        setSuppliers(mapped.filter((supplier) => supplier.type !== 'Fournisseur'));
       } catch (error) {
         console.error('Erreur lors du chargement des entreprises:', error);
         if (active) setLoadError('Impossible de charger les entreprises pour le moment.');
