@@ -25,6 +25,7 @@ import {
 import { CheckBadgeIcon, StarIcon as StarSolid } from '@heroicons/react/24/solid';
 import AppImage from '@/components/ui/AppImage';
 import { createClient } from '@/lib/supabase/client';
+import { uploadImage } from '@/lib/supabase/database';
 
 interface Enterprise {
   id: string;
@@ -426,8 +427,8 @@ export default function MonEntreprisePage() {
           description: row.description ?? '',
           founded: row.founded_year ? String(row.founded_year) : '',
           employees: row.employee_count ? String(row.employee_count) : '',
-          logo: row.logo_url || DEFAULT_LOGO,
-          cover: row.cover_url || DEFAULT_COVER,
+          logo: row.logo_url && !row.logo_url.startsWith('blob:') ? row.logo_url : DEFAULT_LOGO,
+          cover: row.cover_url && !row.cover_url.startsWith('blob:') ? row.cover_url : DEFAULT_COVER,
           verified: !!row.is_verified,
           views: 0,
           followers: 0,
@@ -493,11 +494,23 @@ export default function MonEntreprisePage() {
     if (formErrors[field]) setFormErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
-  const handleImageUpload = useCallback((field: 'logo' | 'cover', file: File) => {
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageUpload = useCallback(async (field: 'logo' | 'cover', file: File) => {
     const err = validateImage(file);
     if (err) { alert(err); return; }
-    const url = URL.createObjectURL(file);
-    setForm((prev) => ({ ...prev, [field]: url }));
+
+    try {
+      setUploadingImage(true);
+      const publicUrl = await uploadImage(file, 'enterprise');
+      setForm((prev) => ({ ...prev, [field]: publicUrl }));
+      showSuccess(field === 'logo' ? 'Logo téléversé avec succès !' : 'Photo de couverture téléversée avec succès !');
+    } catch (error: any) {
+      console.error('Erreur upload image entreprise:', error);
+      alert(`Impossible de téléverser l'image : ${error?.message || 'erreur inconnue'}`);
+    } finally {
+      setUploadingImage(false);
+    }
   }, []);
 
   const validate = (): boolean => {
@@ -521,6 +534,11 @@ export default function MonEntreprisePage() {
         return;
       }
 
+      if (uploadingImage) {
+        alert('Le téléversement de l’image est encore en cours. Veuillez patienter.');
+        return;
+      }
+
       const employeeCount = Number.parseInt(form.employees, 10);
       const foundedYear = Number.parseInt(form.founded, 10);
       const payload = {
@@ -534,8 +552,8 @@ export default function MonEntreprisePage() {
         email: form.email.trim(),
         website: form.website.trim(),
         description: form.description.trim(),
-        logo_url: form.logo || DEFAULT_LOGO,
-        cover_url: form.cover || DEFAULT_COVER,
+        logo_url: form.logo && !form.logo.startsWith('blob:') ? form.logo : DEFAULT_LOGO,
+        cover_url: form.cover && !form.cover.startsWith('blob:') ? form.cover : DEFAULT_COVER,
         employee_count: Number.isFinite(employeeCount) ? employeeCount : 0,
         founded_year: Number.isFinite(foundedYear) ? foundedYear : null,
       };
