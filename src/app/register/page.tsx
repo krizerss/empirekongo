@@ -43,8 +43,9 @@ function RegisterForm() {
 
     setLoading(true);
     const supabase = createClient();
+    const normalizedEmail = form.email.trim().toLowerCase();
     const { data, error: authError } = await supabase.auth.signUp({
-      email: form.email.trim().toLowerCase(),
+      email: normalizedEmail,
       password: form.password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback?next=/member-dashboard`,
@@ -63,7 +64,7 @@ function RegisterForm() {
       router.replace('/member-dashboard');
       router.refresh();
     } else {
-      setMessage('Compte créé. Consultez votre e-mail pour confirmer votre adresse avant de vous connecter.');
+      router.replace(`/auth/verify-email?email=${encodeURIComponent(normalizedEmail)}`);
     }
   }
 
