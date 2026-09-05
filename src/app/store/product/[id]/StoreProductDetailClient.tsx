@@ -26,7 +26,7 @@ import {
 import { CheckBadgeIcon, StarIcon as StarSolid } from '@heroicons/react/24/solid';
 
 export interface StoreProductDetail {
-  id: string; name: string; description: string; price: string; unit: string; category: string; subCategory: string; city: string; image: string; alt: string; stockQty: number; stockStatus: string; rating: number; reviewCount: number; vendorId: string; vendorName: string; vendorType: string; vendorPhone: string; vendorEmail: string; vendorCity: string; vendorVerified: boolean; vendorSince: string; vendorProducts: number;
+  id: string; name: string; description: string; price: string; unit: string; category: string; subCategory: string; city: string; image: string; alt: string; images: Array<{ src: string; alt: string }>; stockQty: number; stockStatus: string; rating: number; reviewCount: number; vendorId: string; vendorName: string; vendorType: string; vendorPhone: string; vendorEmail: string; vendorCity: string; vendorVerified: boolean; vendorSince: string; vendorProducts: number;
   similarProducts: Array<{ id: string; name: string; vendorName: string; price: string; unit: string; image: string; alt: string; rating: number; }>;
 }
 
@@ -38,7 +38,10 @@ export default function StoreProductDetailClient({ product }: { product: StorePr
   const [showAuthGuard, setShowAuthGuard] = useState(false);
   const [isOrdering, setIsOrdering] = useState(false);
   const [activeTab, setActiveTab] = useState<'description' | 'characteristics' | 'reviews'>('description');
-  const images = useMemo(() => [{ src: product.image, alt: product.alt }], [product.image, product.alt]);
+  const images = useMemo(() => {
+    const gallery = product.images?.filter((img) => img?.src);
+    return gallery?.length ? gallery : [{ src: product.image, alt: product.alt }];
+  }, [product.images, product.image, product.alt]);
 
   const handleContact = () => {
     if (!isLoggedIn) { setShowAuthGuard(true); return; }
@@ -113,7 +116,13 @@ export default function StoreProductDetailClient({ product }: { product: StorePr
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            <div className="space-y-3"><div className="relative aspect-square rounded-2xl overflow-hidden bg-card border border-border"><AppImage src={images[activeImage].src} alt={images[activeImage].alt} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />{images.length > 1 && <><button onClick={() => setActiveImage((i) => (i - 1 + images.length) % images.length)} className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70"><ChevronLeftIcon className="w-4 h-4" /></button><button onClick={() => setActiveImage((i) => (i + 1) % images.length)} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70"><ChevronRightIcon className="w-4 h-4" /></button></>}</div></div>
+            <div className="space-y-3">
+              <div className="relative aspect-square rounded-2xl overflow-hidden bg-card border border-border">
+                <AppImage src={images[activeImage]?.src} alt={images[activeImage]?.alt || product.alt} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
+                {images.length > 1 && <><button onClick={() => setActiveImage((i) => (i - 1 + images.length) % images.length)} className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70"><ChevronLeftIcon className="w-4 h-4" /></button><button onClick={() => setActiveImage((i) => (i + 1) % images.length)} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70"><ChevronRightIcon className="w-4 h-4" /></button></>}
+              </div>
+              {images.length > 1 && <div className="flex gap-2 overflow-x-auto pb-1">{images.map((img, i) => <button key={`${img.src}-${i}`} onClick={() => setActiveImage(i)} className={`relative w-20 h-20 shrink-0 rounded-xl overflow-hidden border-2 transition-colors ${activeImage === i ? 'border-primary' : 'border-border hover:border-primary/40'}`}><AppImage src={img.src} alt={img.alt} fill className="object-cover" sizes="80px" /></button>)}</div>}
+            </div>
 
             <div className="space-y-5">
               <div className="flex items-start justify-between gap-4"><div><p className="text-xs text-primary font-semibold uppercase tracking-wider mb-1">{product.category}</p><h1 className="text-2xl font-extrabold text-foreground mb-2">{product.name}</h1><div className="flex items-center gap-3"><div className="flex items-center gap-1">{[1,2,3,4,5].map((s) => <StarSolid key={s} className={`w-4 h-4 ${s <= Math.round(product.rating) ? 'text-primary' : 'text-muted-foreground/30'}`} />)}</div><span className="text-sm text-muted-foreground">{product.rating.toFixed(1)} ({product.reviewCount} avis)</span></div></div><FavoriteButton productId={product.id} /></div>
