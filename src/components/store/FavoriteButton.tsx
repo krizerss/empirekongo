@@ -15,7 +15,6 @@ export default function FavoriteButton({ productId, className = '' }: { productI
   useEffect(() => {
     if (!isLoggedIn) return;
     let active = true;
-    supabase.from('favorites').select('id').eq('product_id', productId).eq('user_id', 'eq.' + '').limit(1);
     supabase.auth.getUser().then(({ data }) => {
       if (!active || !data.user) return;
       supabase.from('favorites').select('id').eq('product_id', productId).eq('user_id', data.user.id).maybeSingle().then(({ data: row }) => {
@@ -44,14 +43,7 @@ export default function FavoriteButton({ productId, className = '' }: { productI
   };
 
   return (
-    <button
-      type="button"
-      onClick={toggleFavorite}
-      disabled={loading}
-      aria-label={favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-      title={favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-      className={`p-2.5 rounded-xl bg-secondary border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors disabled:opacity-50 ${className}`}
-    >
+    <button type="button" onClick={toggleFavorite} disabled={loading} aria-label={favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} title={favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} className={`p-2.5 rounded-xl bg-secondary border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors disabled:opacity-50 ${className}`}>
       {favorite ? <HeartSolid className="w-5 h-5 text-primary" /> : <HeartIcon className="w-5 h-5" />}
     </button>
   );
