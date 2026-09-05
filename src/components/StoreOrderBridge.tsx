@@ -37,14 +37,18 @@ export default function StoreOrderBridge() {
     };
 
     const handleClick = (event: MouseEvent) => {
-      if (!isLoggedIn || window.location.pathname !== '/store') return;
+      if (!isLoggedIn) return;
+      const path = window.location.pathname;
+      if (path !== '/store' && !path.startsWith('/store/product/')) return;
       const target = event.target;
       if (!(target instanceof Element)) return;
       const button = target.closest('button');
       if (!button || (button.textContent || '').replace(/\s+/g, ' ').trim() !== 'Commander') return;
+
       const link = button.closest('a[href^="/store/product/"]') as HTMLAnchorElement | null;
-      const productId = link?.getAttribute('href')?.split('/').pop();
+      const productId = link?.getAttribute('href')?.split('/').pop() || (path.startsWith('/store/product/') ? path.split('/').filter(Boolean).pop() : undefined);
       if (!productId) return;
+
       event.preventDefault();
       event.stopPropagation();
       void createOrder(productId, 1);
