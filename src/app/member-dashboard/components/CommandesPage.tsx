@@ -8,7 +8,10 @@ import { useAuth } from '@/lib/useAuth';
 
 type OrderStatus = 'en_attente' | 'confirmee' | 'en_livraison' | 'livree' | 'annulee';
 
+type DbOrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+
 interface Order {
+  dbId: string;
   id: string;
   date: string;
   customer: { name: string; avatar: string; phone: string; email: string; location: string; company: string; verified: boolean };
@@ -30,12 +33,26 @@ function formatCDF(amount: number) {
 }
 
 function mapStatus(status: string): OrderStatus {
-  if (status === 'confirmed') return 'confirmee';
-  if (status === 'processing') return 'confirmee';
+  if (status === 'confirmed' || status === 'processing') return 'confirmee';
   if (status === 'shipped') return 'en_livraison';
   if (status === 'delivered') return 'livree';
   if (status === 'cancelled' || status === 'refunded') return 'annulee';
   return 'en_attente';
+}
+
+function mapDbStatus(status: OrderStatus): DbOrderStatus {
+  if (status === 'confirmee') return 'confirmed';
+  if (status === 'en_livraison') return 'shipped';
+  if (status === 'livree') return 'delivered';
+  if (status === 'annulee') return 'cancelled';
+  return 'pending';
+}
+
+function nextStatuses(status: OrderStatus): OrderStatus[] {
+  if (status === 'en_attente') return ['confirmee', 'annulee'];
+  if (status === 'confirmee') return ['en_livraison', 'annulee'];
+  if (status === 'en_livraison') return ['livree'];
+  return [];
 }
 
 export default function CommandesPage() {
@@ -46,6 +63,8 @@ export default function CommandesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -103,6 +122,7 @@ export default function CommandesPage() {
         const unitPrice = Number(item?.product_price) || 0;
         const total = Number(item?.subtotal ?? row.total_amount) || 0;
         return {
+          dbId: row.id,
           id: `CMD-${String(row.id).slice(0, 8).toUpperCase()}`,
           date: new Date(row.created_at).toLocaleString('fr-CD', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
           customer: {
@@ -136,6 +156,56 @@ export default function CommandesPage() {
     const channel = supabase.channel(`seller-orders-${user?.id || 'guest'}`).on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => void loadOrders()).subscribe();
     return () => { active = false; supabase.removeChannel(channel); };
   }, [supabase, user?.id, isLoggedIn]);
+
+  const updateOrderStatus = async (order: Order, status: OrderStatus) => {
+    if (!user?.id || updatingOrderId) return;
+    setUpdatingOrderId(order.dbId);
+    setActionError(null);
+
+    const dbStatus = mapDbStatus(status);
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({ status: dbStatus })
+      .eq('id', order.dbId)
+      .eq('seller_id', user.id);
+
+    if (updateError) {
+      setActionError('Impossible de mettre à jour la commande.');
+      setUpdatingOrderId(null);
+      return;
+    }
+
+    const notificationTitle = status === 'confirmee'
+      ? 'Commande confirmée'
+      : status === 'en_livraison'
+        ? 'Commande expédiée'
+        : status === 'livree'
+          ? 'Commande livrée'
+          : 'Commande annulée';
+    const notificationMessage = status === 'confirmee'
+      ? `Votre commande ${order.id} a été confirmée.`
+      : status === 'en_livraison'
+        ? `Votre commande ${order.id} est maintenant en livraison.`
+        : status === 'livree'
+          ? `Votre commande ${order.id} a été livrée.`
+          : `Votre commande ${order.id} a été annulée.`;
+
+    if (status !== 'en_attente') {
+      const { error: notificationError } = await supabase.from('notifications').insert({
+        user_id: (await supabase.from('orders').select('buyer_id').eq('id', order.dbId).maybeSingle()).data?.buyer_id,
+        type: 'order',
+        title: notificationTitle,
+        message: notificationMessage,
+        data: { order_id: order.dbId, status: dbStatus },
+      });
+      if (notificationError) console.warn('Order notification could not be created:', notificationError.message);
+    }
+
+    const updatedOrder = { ...order, status };
+    setOrders((current) => current.map((item) => item.dbId === order.dbId ? updatedOrder : item));
+    setSelectedOrder((current) => current?.dbId === order.dbId ? updatedOrder : current);
+    setUpdatingOrderId(null);
+  };
 
   const filtered = orders.filter((o) => {
     const q = search.toLowerCase();
@@ -178,7 +248,7 @@ export default function CommandesPage() {
               <div className="shrink-0 lg:w-36"><p className="text-xs font-bold text-primary">{order.id}</p><p className="text-[11px] text-muted-foreground mt-0.5">{order.date}</p></div>
               <div className="flex items-center gap-3 flex-1 min-w-0"><div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center shrink-0"><span className="text-xs font-bold text-primary">{order.customer.avatar}</span></div><div className="min-w-0"><div className="flex items-center gap-1.5"><p className="text-sm font-semibold text-foreground truncate">{order.customer.name}</p>{order.customer.verified && <CheckCircleSolid className="w-3.5 h-3.5 text-primary shrink-0" />}</div><p className="text-xs text-muted-foreground truncate">{order.customer.company}</p><div className="flex items-center gap-3 mt-1"><span className="flex items-center gap-1 text-[11px] text-muted-foreground"><PhoneIcon className="w-3 h-3" />{order.customer.phone}</span><span className="flex items-center gap-1 text-[11px] text-muted-foreground hidden sm:flex"><MapPinIcon className="w-3 h-3" />{order.customer.location}</span></div></div></div>
               <div className="flex-1 min-w-0 lg:border-l lg:border-border lg:pl-4"><p className="text-sm font-semibold text-foreground truncate">{order.product.name}</p><p className="text-xs text-muted-foreground">{order.product.category} · {order.product.quantity}</p><p className="text-sm font-bold text-primary mt-1">{formatCDF(order.product.total)}</p></div>
-              <div className="flex items-center gap-3 shrink-0"><div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${sc.bg}`}><StatusIcon className={`w-3.5 h-3.5 ${sc.color}`} /><span className={`text-xs font-semibold ${sc.color}`}>{sc.label}</span></div><button onClick={() => setSelectedOrder(order)} className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors" title="Voir les détails"><EyeIcon className="w-4 h-4" /></button></div>
+              <div className="flex items-center gap-3 shrink-0"><div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${sc.bg}`}><StatusIcon className={`w-3.5 h-3.5 ${sc.color}`} /><span className={`text-xs font-semibold ${sc.color}`}>{sc.label}</span></div><button onClick={() => { setActionError(null); setSelectedOrder(order); }} className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors" title="Voir les détails"><EyeIcon className="w-4 h-4" /></button></div>
             </div>
             {order.note && <div className="mt-3 pt-3 border-t border-border/50"><p className="text-xs text-muted-foreground italic">📝 {order.note}</p></div>}
           </div>
@@ -191,6 +261,8 @@ export default function CommandesPage() {
           <div><p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Informations du client</p><div className="bg-secondary rounded-xl p-4"><div className="flex items-center gap-3 mb-3"><div className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center shrink-0"><span className="text-sm font-bold text-primary">{selectedOrder.customer.avatar}</span></div><div><div className="flex items-center gap-1.5"><p className="font-bold text-foreground text-sm">{selectedOrder.customer.name}</p>{selectedOrder.customer.verified && <CheckCircleSolid className="w-4 h-4 text-primary" />}</div><p className="text-xs text-muted-foreground">{selectedOrder.customer.company}</p></div></div><div className="space-y-2"><div className="flex items-center gap-2.5"><PhoneIcon className="w-4 h-4 text-muted-foreground shrink-0" /><span className="text-sm text-foreground">{selectedOrder.customer.phone}</span></div><div className="flex items-center gap-2.5"><EnvelopeIcon className="w-4 h-4 text-muted-foreground shrink-0" /><span className="text-sm text-foreground">{selectedOrder.customer.email}</span></div><div className="flex items-center gap-2.5"><MapPinIcon className="w-4 h-4 text-muted-foreground shrink-0" /><span className="text-sm text-foreground">{selectedOrder.customer.location}</span></div></div></div></div>
           <div><p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Produit commandé</p><div className="bg-secondary rounded-xl p-4"><p className="font-bold text-foreground text-sm mb-1">{selectedOrder.product.name}</p><p className="text-xs text-muted-foreground mb-3">{selectedOrder.product.category}</p><div className="grid grid-cols-3 gap-3"><div><p className="text-[10px] text-muted-foreground mb-0.5">Quantité</p><p className="text-sm font-semibold text-foreground">{selectedOrder.product.quantity}</p></div><div><p className="text-[10px] text-muted-foreground mb-0.5">Prix unitaire</p><p className="text-sm font-semibold text-foreground">{formatCDF(selectedOrder.product.unitPrice)}</p></div><div><p className="text-[10px] text-muted-foreground mb-0.5">Total</p><p className="text-sm font-bold text-primary">{formatCDF(selectedOrder.product.total)}</p></div></div></div></div>
           {selectedOrder.note && <div><p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Note</p><p className="text-sm text-muted-foreground italic bg-secondary rounded-xl p-3">{selectedOrder.note}</p></div>}
+          {actionError && <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-xs text-red-400">{actionError}</div>}
+          {nextStatuses(selectedOrder.status).length > 0 && <div><p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Gestion de la commande</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{nextStatuses(selectedOrder.status).map((nextStatus) => { const nextConfig = statusConfig[nextStatus]; const NextIcon = nextConfig.icon; const isUpdating = updatingOrderId === selectedOrder.dbId; return <button key={nextStatus} disabled={isUpdating} onClick={() => void updateOrderStatus(selectedOrder, nextStatus)} className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-sm font-bold border border-border ${nextConfig.bg} ${nextConfig.color} hover:border-primary/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}><NextIcon className="w-4 h-4" />{isUpdating ? 'Mise à jour...' : `Passer à : ${nextConfig.label}`}</button>; })}</div></div>}
           <div className="flex gap-2 pt-1"><button onClick={() => setSelectedOrder(null)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors">Fermer</button><a href={`mailto:${selectedOrder.customer.email}`} className="flex-1 py-2.5 rounded-xl bg-primary text-black text-sm font-bold hover:bg-primary/90 transition-colors text-center">Contacter le client</a></div>
         </div>
       </div></div>}
