@@ -9,6 +9,7 @@ import Footer from '@/components/Footer';
 import AuthGuardModal from '@/components/ui/AuthGuardModal';
 import FavoriteButton from '@/components/store/FavoriteButton';
 import { useAuth } from '@/lib/useAuth';
+import { createClient } from '@/lib/supabase/client';
 import {
   ShoppingCartIcon,
   ChatBubbleLeftEllipsisIcon,
@@ -35,6 +36,7 @@ export default function StoreProductDetailClient({ product }: { product: StorePr
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [showAuthGuard, setShowAuthGuard] = useState(false);
+  const [isOrdering, setIsOrdering] = useState(false);
   const [activeTab, setActiveTab] = useState<'description' | 'characteristics' | 'reviews'>('description');
   const images = useMemo(() => [{ src: product.image, alt: product.alt }], [product.image, product.alt]);
 
@@ -44,11 +46,58 @@ export default function StoreProductDetailClient({ product }: { product: StorePr
     router.push(`/member-dashboard?${params.toString()}`);
   };
 
-  const handleOrder = () => {
+  const handleOrder = async () => {
     if (!isLoggedIn) { setShowAuthGuard(true); return; }
-    window.dispatchEvent(new CustomEvent('store-order-request', {
-      detail: { productId: product.id, quantity },
-    }));
+    if (isOrdering) return;
+
+    setIsOrdering(true);
+    try {
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        setShowAuthGuard(true);
+        return;
+      }
+
+      const { data: orderId, error } = await supabase.rpc('create_store_order', {
+        p_product_id: product.id,
+        p_quantity: quantity,
+        p_shipping_address: '',
+        p_shipping_city: product.city || product.vendorCity || '',
+        p_shipping_phone: '',
+        p_notes: '',
+      });
+
+      if (error) {
+        const message = error.message || '';
+        if (message.includes('INSUFFICIENT_STOCK')) {
+          alert('La quantité demandée dépasse le stock disponible.');
+        } else if (message.includes('PRODUCT_NOT_AVAILABLE')) {
+          alert('Ce produit n’est plus disponible.');
+        } else if (message.includes('INVALID_PRODUCT_PRICE')) {
+          alert('Le prix de ce produit est invalide.');
+        } else if (message.includes('AUTH_REQUIRED')) {
+          setShowAuthGuard(true);
+        } else {
+          console.error('Erreur création commande:', error);
+          alert('Impossible de créer la commande pour le moment. Veuillez réessayer.');
+        }
+        return;
+      }
+
+      if (!orderId) {
+        alert('La commande n’a pas pu être créée.');
+        return;
+      }
+
+      router.push('/member-dashboard?tab=orders');
+    } catch (error) {
+      console.error('Erreur inattendue création commande:', error);
+      alert('Impossible de créer la commande pour le moment. Veuillez réessayer.');
+    } finally {
+      setIsOrdering(false);
+    }
   };
 
   const stockLabel = product.stockQty > 0 ? `En stock (${product.stockQty} disponibles)` : 'Rupture de stock';
@@ -71,7 +120,7 @@ export default function StoreProductDetailClient({ product }: { product: StorePr
 
               <div className="bg-card border border-border rounded-xl p-4"><div className="flex items-baseline gap-2"><span className="text-3xl font-extrabold text-primary">{product.price}</span><span className="text-muted-foreground">{product.unit}</span></div><div className="flex items-center gap-2 mt-2"><CheckCircleIcon className={`w-4 h-4 ${stockOk ? 'text-green-400' : 'text-red-400'}`} /><span className={`text-sm font-semibold ${stockOk ? 'text-green-400' : 'text-red-400'}`}>{stockLabel}</span></div></div>
 
-              <div className="space-y-3"><div className="flex items-center gap-3"><span className="text-sm font-semibold text-muted-foreground">Quantité :</span><div className="flex items-center gap-2 bg-secondary border border-border rounded-lg"><button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="px-3 py-2 text-muted-foreground hover:text-foreground">−</button><span className="w-10 text-center text-sm font-bold text-foreground">{quantity}</span><button onClick={() => setQuantity((q) => Math.min(Math.max(product.stockQty, 1), q + 1))} className="px-3 py-2 text-muted-foreground hover:text-foreground">+</button></div></div><div className="flex gap-3"><button disabled={!stockOk} onClick={handleOrder} className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"><ShoppingCartIcon className="w-5 h-5" /> Commander</button><button onClick={handleContact} className="flex-1 flex items-center justify-center gap-2 py-3 border border-primary text-primary rounded-xl font-bold hover:bg-primary/10 transition-colors"><ChatBubbleLeftEllipsisIcon className="w-5 h-5" /> Contacter</button></div></div>
+              <div className="space-y-3"><div className="flex items-center gap-3"><span className="text-sm font-semibold text-muted-foreground">Quantité :</span><div className="flex items-center gap-2 bg-secondary border border-border rounded-lg"><button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="px-3 py-2 text-muted-foreground hover:text-foreground">−</button><span className="w-10 text-center text-sm font-bold text-foreground">{quantity}</span><button onClick={() => setQuantity((q) => Math.min(Math.max(product.stockQty, 1), q + 1))} className="px-3 py-2 text-muted-foreground hover:text-foreground">+</button></div></div><div className="flex gap-3"><button disabled={!stockOk || isOrdering} onClick={handleOrder} className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"><ShoppingCartIcon className="w-5 h-5" /> {isOrdering ? 'Création...' : 'Commander'}</button><button onClick={handleContact} className="flex-1 flex items-center justify-center gap-2 py-3 border border-primary text-primary rounded-xl font-bold hover:bg-primary/10 transition-colors"><ChatBubbleLeftEllipsisIcon className="w-5 h-5" /> Contacter</button></div></div>
 
               <div className="grid grid-cols-3 gap-3">{[{ icon:<ShieldCheckIcon className="w-4 h-4" />,label:'Paiement sécurisé'},{icon:<TruckIcon className="w-4 h-4" />,label:'Livraison rapide'},{icon:<CheckCircleIcon className="w-4 h-4" />,label:'Qualité garantie'}].map((b)=><div key={b.label} className="flex flex-col items-center gap-1 p-3 bg-secondary rounded-xl text-center"><span className="text-primary">{b.icon}</span><span className="text-[10px] text-muted-foreground font-semibold">{b.label}</span></div>)}</div>
 
