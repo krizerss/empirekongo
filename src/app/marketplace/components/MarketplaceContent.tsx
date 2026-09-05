@@ -1,28 +1,15 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import AppImage from '@/components/ui/AppImage';
 import Link from 'next/link';
 import AuthGuardModal from '@/components/ui/AuthGuardModal';
 import { useAuth } from '@/lib/useAuth';
+import { createClient } from '@/lib/supabase/client';
 import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon, MapPinIcon, XMarkIcon, PhoneIcon, EnvelopeIcon, BuildingOfficeIcon, ShoppingCartIcon, CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon, TruckIcon, ShieldCheckIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon, StarIcon as StarSolid } from '@heroicons/react/24/solid';
 
-const allCategories = [
-{ label: 'Toutes catégories', count: 520 },
-{ label: 'Agriculture', count: 134 },
-{ label: 'Élevage', count: 67 },
-{ label: 'Agroalimentaire', count: 89 },
-{ label: 'Énergie', count: 43 },
-{ label: 'BTP & Matériaux', count: 56 },
-{ label: 'Mode & Beauté', count: 72 },
-{ label: 'Technologie', count: 59 },
-{ label: 'Autres', count: 0 }];
-
-
-const allCities = ['Toutes les villes', 'Kinshasa', 'Matadi', 'Boma', 'Lubumbashi', 'Goma'];
-
 interface Product {
-  id: number;
+  id: string;
   name: string;
   vendor: string;
   vendorType: string;
@@ -46,169 +33,6 @@ interface Product {
   vendorSince?: string;
   vendorProducts?: number;
 }
-
-const allProducts: Product[] = [
-{
-  id: 1, name: 'Café Robusta du Kongo', vendor: 'Kongo Agro SARL', vendorType: 'Entreprise', vendorPhone: '+243 81 234 5678', vendorEmail: 'contact@kongoagro.cd', vendorCity: 'Kinshasa', vendorVerified: true, price: '25,000 FC', unit: '/ Kg', category: 'Agriculture', city: 'Kinshasa',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1aceaa107-1772687295264.png", alt: 'Grains de café robusta brun foncé dans un sac en jute, café artisanal congolais de qualité premium',
-  description: 'Café Robusta de haute qualité cultivé dans les terres fertiles du Kongo. Récolté à la main, séché au soleil et torréfié selon les méthodes traditionnelles. Arôme intense, corps plein et légère amertume caractéristique du terroir congolais.',
-  stock: 'En stock', stockQty: 250, rating: 4.7, reviewCount: 38, vendorSince: '2019', vendorProducts: 12,
-  images: [
-  { src: "https://img.rocket.new/generatedImages/rocket_gen_img_1aceaa107-1772687295264.png", alt: 'Grains de café robusta brun foncé dans un sac en jute' },
-  { src: "https://images.unsplash.com/photo-1691775755067-a9807ac8939c", alt: 'Tasse de café noir fumant sur fond sombre' },
-  { src: "https://images.unsplash.com/photo-1687821015492-cb3422bdb76a", alt: 'Plantation de café avec feuilles vertes et cerises rouges' }],
-
-  reviews: [
-  { author: 'Jean-Pierre M.', rating: 5, date: '12 juin 2025', comment: 'Excellent café, très aromatique. Je commande régulièrement depuis 2 ans.' },
-  { author: 'Marie K.', rating: 4, date: '3 mai 2025', comment: 'Bonne qualité, livraison rapide. Légèrement plus amer que prévu mais très bon.' },
-  { author: 'Paul N.', rating: 5, date: '18 avr. 2025', comment: 'Le meilleur café que j\'ai goûté au Congo. Fortement recommandé !' }]
-
-},
-{
-  id: 2, name: "Huile de Palme Naturelle", vendor: 'Saveurs du Kongo', vendorType: 'Entreprise', vendorPhone: '+243 82 345 6789', vendorEmail: 'info@saveurskongo.cd', vendorCity: 'Boma', vendorVerified: true, price: '15,000 FC', unit: '/ Litre', category: 'Agroalimentaire', city: 'Boma',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_100f6c606-1772807125471.png", alt: "Bouteille d'huile de palme rouge orangée sur fond sombre, produit naturel africain",
-  description: "Huile de palme 100% naturelle, non raffinée, extraite à froid. Riche en vitamines A et E, idéale pour la cuisine traditionnelle congolaise. Sans additifs ni conservateurs.",
-  stock: 'En stock', stockQty: 180, rating: 4.5, reviewCount: 24, vendorSince: '2017', vendorProducts: 8,
-  images: [
-  { src: "https://img.rocket.new/generatedImages/rocket_gen_img_1dbae1103-1779692655900.png", alt: "Bouteille d'huile de palme rouge orangée" },
-  { src: "https://images.unsplash.com/photo-1644126978412-cc8b041efafe", alt: "Régimes de noix de palme orange sur palmier" }],
-
-  reviews: [
-  { author: 'Cécile B.', rating: 5, date: '20 juin 2025', comment: 'Huile de très bonne qualité, couleur et goût authentiques.' },
-  { author: 'Robert L.', rating: 4, date: '8 mai 2025', comment: 'Bonne huile, conforme à la description. Livraison soignée.' }]
-
-},
-{
-  id: 3, name: 'Maïs Séché', vendor: 'Kongo Agro SARL', vendorType: 'Entreprise', vendorPhone: '+243 81 234 5678', vendorEmail: 'contact@kongoagro.cd', vendorCity: 'Kinshasa', vendorVerified: true, price: '8,000 FC', unit: '/ Kg', category: 'Agriculture', city: 'Kinshasa',
-  image: "https://images.unsplash.com/photo-1658970870100-b926cb232e3e", alt: 'Épis de maïs jaune doré séchés au soleil, céréale de base congolaise',
-  description: 'Maïs séché naturellement au soleil, sans traitement chimique. Idéal pour la farine de maïs, la polenta ou l\'alimentation animale. Cultivé localement dans la province de Kinshasa.',
-  stock: 'Stock limité', stockQty: 45, rating: 4.2, reviewCount: 15, vendorSince: '2019', vendorProducts: 12,
-  images: [
-  { src: "https://images.unsplash.com/photo-1658970870100-b926cb232e3e", alt: 'Épis de maïs jaune doré séchés au soleil' },
-  { src: "https://images.unsplash.com/photo-1673694800551-b84c5e7d2933", alt: 'Grains de maïs jaune dans un bol en bois' }],
-
-  reviews: [
-  { author: 'Alain T.', rating: 4, date: '1 juil. 2025', comment: 'Bon maïs, bien séché. Parfait pour la farine.' }]
-
-},
-{
-  id: 4, name: 'Savon Artisanal', vendor: 'Saveurs du Kongo', vendorType: 'Entreprise', vendorPhone: '+243 82 345 6789', vendorEmail: 'info@saveurskongo.cd', vendorCity: 'Boma', vendorVerified: true, price: '3,500 FC', unit: '/ Pièce', category: 'Mode & Beauté', city: 'Boma',
-  image: "https://images.unsplash.com/photo-1612799897476-e6e6e663f337", alt: 'Savons artisanaux aux huiles naturelles empilés avec fleurs séchées, savonnerie artisanale',
-  description: 'Savon artisanal fabriqué à la main avec des huiles naturelles locales (palme, coco, karité). Sans sulfates ni parabènes. Convient aux peaux sensibles. Parfum naturel aux plantes.',
-  stock: 'En stock', stockQty: 320, rating: 4.8, reviewCount: 52, vendorSince: '2017', vendorProducts: 8,
-  images: [
-  { src: "https://images.unsplash.com/photo-1612799897476-e6e6e663f337", alt: 'Savons artisanaux empilés avec fleurs séchées' },
-  { src: "https://images.unsplash.com/photo-1605264965122-e8471bed733c", alt: 'Savon naturel avec ingrédients botaniques' }],
-
-  reviews: [
-  { author: 'Nadège F.', rating: 5, date: '15 juin 2025', comment: 'Savon magnifique, sent très bon et mousse bien. Ma peau adore !' },
-  { author: 'Christelle M.', rating: 5, date: '2 juin 2025', comment: 'Qualité exceptionnelle. Je ne veux plus d\'autre savon.' },
-  { author: 'Didier K.', rating: 4, date: '20 mai 2025', comment: 'Très bon produit, livraison rapide.' }]
-
-},
-{
-  id: 5, name: 'Miel Naturel', vendor: 'Kongo Agro SARL', vendorType: 'Entreprise', vendorPhone: '+243 81 234 5678', vendorEmail: 'contact@kongoagro.cd', vendorCity: 'Kinshasa', vendorVerified: true, price: '7,000 FC', unit: '/ Pot', category: 'Agriculture', city: 'Kinshasa',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1b9932d16-1772872383455.png", alt: 'Pot de miel naturel doré avec rayon de miel, apiculture congolaise traditionnelle',
-  description: 'Miel pur de forêt tropicale, récolté par des apiculteurs locaux. Non pasteurisé, non filtré pour conserver tous ses bienfaits naturels. Goût floral intense avec des notes boisées.',
-  stock: 'En stock', stockQty: 90, rating: 4.9, reviewCount: 61, vendorSince: '2019', vendorProducts: 12,
-  images: [
-  { src: "https://img.rocket.new/generatedImages/rocket_gen_img_1bd4d46c0-1766748178463.png", alt: 'Pot de miel naturel doré avec rayon de miel' },
-  { src: "https://images.unsplash.com/photo-1630942233538-4e21d78a8622", alt: 'Ruche en bois dans une forêt tropicale verte' }],
-
-  reviews: [
-  { author: 'Sophie A.', rating: 5, date: '10 juil. 2025', comment: 'Miel incroyable, goût unique. Rien à voir avec le miel industriel.' },
-  { author: 'Emmanuel D.', rating: 5, date: '28 juin 2025', comment: 'Pur et naturel. Je recommande vivement !' }]
-
-},
-{
-  id: 6, name: 'Riz Local', vendor: 'Saveurs du Kongo', vendorType: 'Entreprise', vendorPhone: '+243 82 345 6789', vendorEmail: 'info@saveurskongo.cd', vendorCity: 'Boma', vendorVerified: true, price: '6,000 FC', unit: '/ Kg', category: 'Agroalimentaire', city: 'Boma',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_136eca2eb-1784370700193.png", alt: 'Riz blanc local dans un bol en bois sur fond sombre, céréale cultivée localement en RDC',
-  description: 'Riz blanc cultivé localement dans les plaines de la province du Kongo Central. Grain long, texture ferme après cuisson. Sans OGM, sans pesticides chimiques.',
-  stock: 'En stock', stockQty: 500, rating: 4.3, reviewCount: 29, vendorSince: '2017', vendorProducts: 8,
-  images: [
-  { src: "https://img.rocket.new/generatedImages/rocket_gen_img_17814ecf6-1784370699737.png", alt: 'Riz blanc local dans un bol en bois' }],
-
-  reviews: [
-  { author: 'Bernadette N.', rating: 4, date: '5 juil. 2025', comment: 'Bon riz, cuit bien. Bon rapport qualité-prix.' }]
-
-},
-{
-  id: 7, name: 'Panneaux Solaires 300W', vendor: 'Green Energie', vendorType: 'Entreprise', vendorPhone: '+243 89 456 7890', vendorEmail: 'info@greenenergie.cd', vendorCity: 'Kinshasa', vendorVerified: true, price: '450,000 FC', unit: '/ Unité', category: 'Énergie', city: 'Kinshasa',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1b937a421-1773093286076.png", alt: 'Panneau solaire photovoltaïque bleu sur fond ciel africain, énergie renouvelable au Congo',
-  description: 'Panneau solaire monocristallin 300W haute performance. Rendement 21%, résistant aux intempéries (IP67). Garantie 10 ans fabricant. Idéal pour usage résidentiel et commercial en RDC.',
-  stock: 'Stock limité', stockQty: 15, rating: 4.6, reviewCount: 18, vendorSince: '2020', vendorProducts: 6,
-  images: [
-  { src: "https://img.rocket.new/generatedImages/rocket_gen_img_1b937a421-1773093286076.png", alt: 'Panneau solaire photovoltaïque bleu sur fond ciel africain' },
-  { src: "https://img.rocket.new/generatedImages/rocket_gen_img_188d0b4c9-1779362425586.png", alt: 'Installation de panneaux solaires sur toit de maison' }],
-
-  reviews: [
-  { author: 'Théodore M.', rating: 5, date: '22 juin 2025', comment: 'Excellent panneau, installation facile. Très satisfait du rendement.' },
-  { author: 'Gisèle K.', rating: 4, date: '10 juin 2025', comment: 'Bonne qualité, livraison dans les délais.' }]
-
-},
-{
-  id: 8, name: 'Ciment Portland 50kg', vendor: 'EcoBuild SARL', vendorType: 'Entreprise', vendorPhone: '+243 84 567 8901', vendorEmail: 'contact@ecobuild.cd', vendorCity: 'Matadi', vendorVerified: false, price: '18,000 FC', unit: '/ Sac', category: 'BTP & Matériaux', city: 'Matadi',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1c3a5dfb7-1772551496700.png", alt: 'Sacs de ciment empilés sur chantier de construction, matériaux de construction congolais',
-  description: 'Ciment Portland CEM II 42.5R, sac de 50 kg. Haute résistance initiale, idéal pour fondations, dalles et maçonnerie. Conforme aux normes congolaises de construction.',
-  stock: 'En stock', stockQty: 1200, rating: 4.1, reviewCount: 33, vendorSince: '2016', vendorProducts: 15,
-  images: [
-  { src: "https://img.rocket.new/generatedImages/rocket_gen_img_13de156d2-1772741976528.png", alt: 'Sacs de ciment empilés sur chantier de construction' }],
-
-  reviews: [
-  { author: 'Augustin B.', rating: 4, date: '18 juil. 2025', comment: 'Ciment de bonne qualité, prise rapide. Bon pour les travaux.' }]
-
-},
-{
-  id: 9, name: 'Poulet de Ferme', vendor: 'Kongo Agro SARL', vendorType: 'Entreprise', vendorPhone: '+243 81 234 5678', vendorEmail: 'contact@kongoagro.cd', vendorCity: 'Kinshasa', vendorVerified: true, price: '12,000 FC', unit: '/ Kg', category: 'Élevage', city: 'Kinshasa',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1ff16ffa0-1773206697563.png", alt: 'Poulet de ferme bien nourri dans une ferme avicole africaine, élevage traditionnel congolais',
-  description: 'Poulet fermier élevé en plein air, nourri aux céréales locales sans hormones ni antibiotiques. Chair ferme et savoureuse. Disponible entier ou en morceaux selon commande.',
-  stock: 'En stock', stockQty: 60, rating: 4.4, reviewCount: 27, vendorSince: '2019', vendorProducts: 12,
-  images: [
-  { src: "https://img.rocket.new/generatedImages/rocket_gen_img_1ff16ffa0-1773206697563.png", alt: 'Poulet de ferme bien nourri dans une ferme avicole africaine' }],
-
-  reviews: [
-  { author: 'Véronique M.', rating: 5, date: '14 juil. 2025', comment: 'Poulet délicieux, goût authentique. Bien meilleur que le poulet industriel.' }]
-
-},
-{
-  id: 10, name: 'Smartphone Réparation', vendor: 'TechKongo Solutions', vendorType: 'Entreprise', vendorPhone: '+243 85 678 9012', vendorEmail: 'support@techkongo.cd', vendorCity: 'Kinshasa', vendorVerified: true, price: '25,000 FC', unit: '/ Service', category: 'Technologie', city: 'Kinshasa',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_1754a7a72-1764760492454.png", alt: 'Technicien réparant smartphone avec outils de précision, service technologique congolais',
-  description: 'Service de réparation de smartphones toutes marques (Samsung, iPhone, Tecno, Infinix…). Remplacement d\'écran, batterie, connecteur de charge. Diagnostic gratuit. Garantie 3 mois sur les réparations.',
-  stock: 'En stock', stockQty: 999, rating: 4.7, reviewCount: 44, vendorSince: '2021', vendorProducts: 5,
-  images: [
-  { src: "https://img.rocket.new/generatedImages/rocket_gen_img_1fe7f5850-1772260058846.png", alt: 'Technicien réparant smartphone avec outils de précision' }],
-
-  reviews: [
-  { author: 'Franck O.', rating: 5, date: '9 juil. 2025', comment: 'Réparation rapide et soignée. Mon téléphone est comme neuf !' },
-  { author: 'Isabelle N.', rating: 4, date: '30 juin 2025', comment: 'Bon service, technicien compétent. Je recommande.' }]
-
-},
-{
-  id: 11, name: 'Tomates Fraîches', vendor: 'Saveurs du Kongo', vendorType: 'Entreprise', vendorPhone: '+243 82 345 6789', vendorEmail: 'info@saveurskongo.cd', vendorCity: 'Boma', vendorVerified: true, price: '4,000 FC', unit: '/ Kg', category: 'Agriculture', city: 'Boma',
-  image: "https://images.unsplash.com/photo-1536250370089-ff04e7a123fc", alt: 'Tomates fraîches rouges brillantes sur fond sombre, légumes frais du jardin congolais',
-  description: 'Tomates fraîches cultivées sans pesticides dans les jardins maraîchers de Boma. Récoltées à maturité, riches en lycopène. Idéales pour sauces, salades et plats traditionnels.',
-  stock: 'Stock limité', stockQty: 30, rating: 4.3, reviewCount: 19, vendorSince: '2017', vendorProducts: 8,
-  images: [
-  { src: "https://images.unsplash.com/photo-1667986968934-bf1fd9db241f", alt: 'Tomates fraîches rouges brillantes sur fond sombre' }],
-
-  reviews: [
-  { author: 'Lucie M.', rating: 4, date: '16 juil. 2025', comment: 'Tomates bien mûres et savoureuses. Parfaites pour la sauce.' }]
-
-},
-{
-  id: 12, name: 'Tissu Wax Africain', vendor: 'Mode Congo', vendorType: 'Entreprise', vendorPhone: '+243 86 789 0123', vendorEmail: 'contact@modecongo.cd', vendorCity: 'Kinshasa', vendorVerified: false, price: '35,000 FC', unit: '/ Mètre', category: 'Mode & Beauté', city: 'Kinshasa',
-  image: "https://img.rocket.new/generatedImages/rocket_gen_img_13b6e2cb6-1765354968164.png", alt: 'Tissu wax africain coloré avec motifs géométriques traditionnels, textile africain authentique',
-  description: 'Tissu wax 100% coton, imprimé en Afrique de l\'Ouest. Motifs géométriques et floraux traditionnels. Largeur 115 cm. Disponible en plusieurs coloris. Idéal pour confection de vêtements traditionnels.',
-  stock: 'En stock', stockQty: 200, rating: 4.6, reviewCount: 35, vendorSince: '2018', vendorProducts: 20,
-  images: [
-  { src: "https://img.rocket.new/generatedImages/rocket_gen_img_13b6e2cb6-1765354968164.png", alt: 'Tissu wax africain coloré avec motifs géométriques traditionnels' }],
-
-  reviews: [
-  { author: 'Angélique D.', rating: 5, date: '11 juil. 2025', comment: 'Tissu magnifique, couleurs vives et résistantes. Très belle qualité.' },
-  { author: 'Serge M.', rating: 4, date: '5 juil. 2025', comment: 'Bon tissu, conforme aux photos. Livraison rapide.' }]
-
-}];
-
 
 // ─── Seller Profile Modal ─────────────────────────────────────────────────────
 
@@ -235,8 +59,8 @@ function SellerProfileModal({ seller, onClose, onContact }: {seller: SellerProfi
         </div>
         <div className="p-5">
           <div className="flex items-center gap-4 mb-5">
-            <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0">
-              <span className="text-lg font-extrabold text-primary">{initials}</span>
+            <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0 overflow-hidden">
+              {seller.logoUrl ? <AppImage src={seller.logoUrl} alt={seller.name} width={56} height={56} className="w-full h-full object-cover" /> : <span className="text-lg font-extrabold text-primary">{initials}</span>
             </div>
             <div>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -291,7 +115,7 @@ function SellerProfileModal({ seller, onClose, onContact }: {seller: SellerProfi
 // ─── Order / Reserve Modal ────────────────────────────────────────────────────
 
 interface OrderProduct {
-  id: number;
+  id: string;
   name: string;
   price: string;
   unit: string;
@@ -525,8 +349,8 @@ function ProductDetailModal({
             </div>
             <div className="p-4">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-                  <span className="text-base font-extrabold text-primary">{initials}</span>
+                <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center shrink-0 overflow-hidden">
+                  {product.vendorLogo ? <AppImage src={product.vendorLogo} alt={product.vendor} width={48} height={48} className="w-full h-full object-cover" /> : <span className="text-base font-extrabold text-primary">{initials}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -617,6 +441,20 @@ function ProductDetailModal({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function MarketplaceContent() {
+  const [products, setProducts] = useState<Product[]>([]);
+  useEffect(() => {
+    const supabase = createClient(); let mounted = true;
+    const load = async () => {
+      const { data, error } = await supabase.from('products').select('id,name,description,price,unit,category,city,image_url,alt_text,stock_status,stock_qty,rating,review_count,vendor_id,vendor_name,vendor_type,vendor_phone,vendor_email,vendor_city,vendor_verified,vendor_since,enterprise_id,created_at,enterprises:enterprise_id(name,logo_url,cover_url,is_verified,founded_year,city)').eq('is_active', true).order('created_at', { ascending: false });
+      if (!mounted) return;
+      if (error) { console.error('Marketplace:', error.message); setProducts([]); return; }
+      const rows = (data || []) as any[]; const counts = new Map<string, number>(); rows.forEach(r => { if (r.vendor_id) counts.set(r.vendor_id, (counts.get(r.vendor_id) || 0) + 1); });
+      setProducts(rows.map(r => ({ id:r.id, name:r.name, vendor:r.vendor_name || r.enterprises?.name || 'Vendeur', vendorType:r.vendor_type || 'Entreprise', vendorPhone:r.vendor_phone || '', vendorEmail:r.vendor_email || '', vendorCity:r.vendor_city || r.enterprises?.city || r.city || '', vendorVerified:Boolean(r.vendor_verified || r.enterprises?.is_verified), price:r.price, unit:r.unit ? (r.unit.startsWith('/') ? r.unit : '/ ' + r.unit) : '', category:r.category || 'Autres', city:r.city || r.vendor_city || '', image:r.image_url || '', alt:r.alt_text || r.name, description:r.description || undefined, stock:r.stock_status || 'En stock', stockQty:r.stock_qty ?? 0, rating:r.rating == null ? undefined : Number(r.rating), reviewCount:r.review_count ?? 0, vendorSince:r.vendor_since || (r.enterprises?.founded_year ? String(r.enterprises.founded_year) : ''), vendorProducts:r.vendor_id ? counts.get(r.vendor_id) || 0 : undefined, vendorLogo:r.enterprises?.logo_url || undefined, vendorCover:r.enterprises?.cover_url || undefined, enterpriseId:r.enterprise_id || undefined })));
+    };
+    void load(); const channel=supabase.channel('marketplace-products').on('postgres_changes',{event:'*',schema:'public',table:'products'},()=>void load()).subscribe(); return()=>{mounted=false;void supabase.removeChannel(channel);};
+  }, []);
+  const allCategories=useMemo(()=>{const m=new Map<string,number>(); products.forEach(p=>m.set(p.category,(m.get(p.category)||0)+1)); return [{label:'Toutes catégories',count:products.length},...Array.from(m.entries()).sort(([a],[b])=>a.localeCompare(b,'fr')).map(([label,count])=>({label,count}))];},[products]);
+  const allCities=useMemo(()=>['Toutes les villes',...Array.from(new Set(products.map(p=>p.city).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'fr'))],[products]);
   const { isLoggedIn } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('Toutes catégories');
   const [selectedCity, setSelectedCity] = useState('Toutes les villes');
@@ -635,7 +473,7 @@ export default function MarketplaceContent() {
     }
   };
 
-  const filtered = allProducts?.filter((p) => {
+  const filtered = products.filter((p) => {
     const matchCat = selectedCategory === 'Toutes catégories' || p?.category === selectedCategory;
     const matchCity = selectedCity === 'Toutes les villes' || p?.city === selectedCity;
     const matchSearch = !searchQuery || p?.name?.toLowerCase()?.includes(searchQuery?.toLowerCase()) || p?.vendor?.toLowerCase()?.includes(searchQuery?.toLowerCase());
@@ -853,7 +691,7 @@ export default function MarketplaceContent() {
                     email: product.vendorEmail,
                     city: product.vendorCity,
                     verified: product.vendorVerified,
-                    category: product.category
+                    category: product.category, logoUrl: product.vendorLogo, coverUrl: product.vendorCover
                   })
                   }
                   className="flex items-center gap-1 mb-1.5 group/seller w-full text-left">
