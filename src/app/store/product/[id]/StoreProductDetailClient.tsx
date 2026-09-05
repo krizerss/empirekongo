@@ -46,8 +46,9 @@ export default function StoreProductDetailClient({ product }: { product: StorePr
 
   const handleOrder = () => {
     if (!isLoggedIn) { setShowAuthGuard(true); return; }
-    const params = new URLSearchParams({ product: product.id, quantity: String(quantity) });
-    router.push(`/store?order=${params.toString()}`);
+    window.dispatchEvent(new CustomEvent('store-order-request', {
+      detail: { productId: product.id, quantity },
+    }));
   };
 
   const stockLabel = product.stockQty > 0 ? `En stock (${product.stockQty} disponibles)` : 'Rupture de stock';
