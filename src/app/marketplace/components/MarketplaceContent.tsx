@@ -17,6 +17,9 @@ interface Product {
   vendorEmail: string;
   vendorCity: string;
   vendorVerified: boolean;
+  vendorLogo?: string;
+  vendorCover?: string;
+  enterpriseId?: string;
   price: string;
   unit: string;
   category: string;
@@ -44,6 +47,8 @@ interface SellerProfile {
   city: string;
   verified: boolean;
   category: string;
+  logoUrl?: string;
+  coverUrl?: string;
 }
 
 function SellerProfileModal({ seller, onClose, onContact }: {seller: SellerProfile;onClose: () => void;onContact: () => void;}) {
@@ -206,12 +211,6 @@ function ProductDetailModal({
   onOrder,
   onReserve,
   onViewSeller
-
-
-
-
-
-
 }: {product: Product;onClose: () => void;onOrder: () => void;onReserve: () => void;onViewSeller: () => void;}) {
   const [activeImg, setActiveImg] = useState(0);
   const images = product.images && product.images.length > 0 ? product.images : [{ src: product.image, alt: product.alt }];
@@ -227,215 +226,28 @@ function ProductDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="bg-card border border-border rounded-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl shadow-black/70"
-        onClick={(e) => e.stopPropagation()}>
-        
-        {/* Header */}
+      <div className="bg-card border border-border rounded-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl shadow-black/70" onClick={(e) => e.stopPropagation()}>
         <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-3.5 border-b border-border bg-card/95 backdrop-blur-sm">
-          <button onClick={onClose} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeftIcon className="w-3.5 h-3.5" />
-            Retour au marketplace
-          </button>
+          <button onClick={onClose} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"><ArrowLeftIcon className="w-3.5 h-3.5" />Retour au marketplace</button>
           <span className="badge-gold text-[10px]">{product.category}</span>
         </div>
-
         <div className="p-5 space-y-5">
-          {/* Image gallery */}
           <div className="space-y-2">
             <div className="relative h-56 sm:h-72 rounded-xl overflow-hidden bg-secondary">
-              <AppImage
-                src={images[activeImg]?.src}
-                alt={images[activeImg]?.alt}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 672px" />
-              
-              {images.length > 1 &&
-              <>
-                  <button
-                  onClick={() => setActiveImg((prev) => (prev - 1 + images.length) % images.length)}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors">
-                  
-                    <ChevronLeftIcon className="w-4 h-4" />
-                  </button>
-                  <button
-                  onClick={() => setActiveImg((prev) => (prev + 1) % images.length)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors">
-                  
-                    <ChevronRightIcon className="w-4 h-4" />
-                  </button>
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                    {images.map((_, i) =>
-                  <button key={i} onClick={() => setActiveImg(i)} className={`w-1.5 h-1.5 rounded-full transition-all ${i === activeImg ? 'bg-white w-4' : 'bg-white/50'}`} />
-                  )}
-                  </div>
-                </>
-              }
+              <AppImage src={images[activeImg]?.src} alt={images[activeImg]?.alt} fill className="object-cover" sizes="(max-width: 768px) 100vw, 672px" />
+              {images.length > 1 && <><button onClick={() => setActiveImg((prev) => (prev - 1 + images.length) % images.length)} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"><ChevronLeftIcon className="w-4 h-4" /></button><button onClick={() => setActiveImg((prev) => (prev + 1) % images.length)} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"><ChevronRightIcon className="w-4 h-4" /></button><div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">{images.map((_, i) => <button key={i} onClick={() => setActiveImg(i)} className={`w-1.5 h-1.5 rounded-full transition-all ${i === activeImg ? 'bg-white w-4' : 'bg-white/50'}`} />)}</div></>}
             </div>
-            {images.length > 1 &&
-            <div className="flex gap-2 overflow-x-auto pb-1">
-                {images.map((img, i) =>
-              <button
-                key={i}
-                onClick={() => setActiveImg(i)}
-                className={`relative w-14 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${i === activeImg ? 'border-primary' : 'border-border hover:border-primary/40'}`}>
-                
-                    <AppImage src={img.src} alt={img.alt} fill className="object-cover" sizes="56px" />
-                  </button>
-              )}
-              </div>
-            }
+            {images.length > 1 && <div className="flex gap-2 overflow-x-auto pb-1">{images.map((img, i) => <button key={i} onClick={() => setActiveImg(i)} className={`relative w-14 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${i === activeImg ? 'border-primary' : 'border-border hover:border-primary/40'}`}><AppImage src={img.src} alt={img.alt} fill className="object-cover" sizes="56px" /></button>)}</div>}
           </div>
-
-          {/* Title + price + stock */}
-          <div>
-            <h1 className="text-xl font-extrabold text-foreground leading-tight mb-2">{product.name}</h1>
-            <div className="flex items-center flex-wrap gap-3 mb-3">
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-extrabold text-primary">{product.price}</span>
-                <span className="text-sm text-muted-foreground">{product.unit}</span>
-              </div>
-              {product.stock &&
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${stockColor}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${stockDot}`} />
-                  {product.stock}
-                  {product.stock === 'Stock limité' && product.stockQty &&
-                <span className="opacity-70">({product.stockQty} restants)</span>
-                }
-                </span>
-              }
-            </div>
-            {/* Rating summary */}
-            {product.rating &&
-            <div className="flex items-center gap-2">
-                <StarRating rating={product.rating} size="md" />
-                <span className="text-sm font-bold text-foreground">{product.rating.toFixed(1)}</span>
-                <span className="text-xs text-muted-foreground">({product.reviewCount} avis)</span>
-              </div>
-            }
-          </div>
-
-          {/* Description */}
-          {product.description &&
-          <div>
-              <h2 className="text-sm font-extrabold text-foreground mb-2 uppercase tracking-wide">Description</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
-            </div>
-          }
-
-          {/* Guarantees */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-center gap-2.5 p-3 bg-secondary rounded-xl">
-              <TruckIcon className="w-4 h-4 text-primary shrink-0" />
-              <div>
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Livraison</p>
-                <p className="text-xs font-bold text-foreground">Disponible</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2.5 p-3 bg-secondary rounded-xl">
-              <ShieldCheckIcon className="w-4 h-4 text-primary shrink-0" />
-              <div>
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Garantie</p>
-                <p className="text-xs font-bold text-foreground">Qualité assurée</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Vendor profile */}
-          <div className="border border-border rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-border bg-secondary/50">
-              <h2 className="text-sm font-extrabold text-foreground uppercase tracking-wide">Vendeur</h2>
-            </div>
-            <div className="p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center shrink-0 overflow-hidden">
-                  {product.vendorLogo ? <AppImage src={product.vendorLogo} alt={product.vendor} width={48} height={48} className="w-full h-full object-cover" /> : <span className="text-base font-extrabold text-primary">{initials}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-sm font-extrabold text-foreground truncate">{product.vendor}</span>
-                    {product.vendorVerified && <CheckBadgeIcon className="w-4 h-4 text-primary shrink-0" />}
-                  </div>
-                  <p className="text-xs text-muted-foreground">{product.vendorType}</p>
-                </div>
-                {product.vendorVerified &&
-                <span className="shrink-0 px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-full border border-primary/20">✓ Vérifié</span>
-                }
-              </div>
-              <div className="grid grid-cols-3 gap-2 mb-3">
-                <div className="text-center p-2 bg-secondary rounded-lg">
-                  <p className="text-sm font-extrabold text-foreground">{product.vendorSince || '—'}</p>
-                  <p className="text-[10px] text-muted-foreground">Depuis</p>
-                </div>
-                <div className="text-center p-2 bg-secondary rounded-lg">
-                  <p className="text-sm font-extrabold text-foreground">{product.vendorProducts || '—'}</p>
-                  <p className="text-[10px] text-muted-foreground">Produits</p>
-                </div>
-                <div className="text-center p-2 bg-secondary rounded-lg">
-                  <MapPinIcon className="w-3.5 h-3.5 text-primary mx-auto mb-0.5" />
-                  <p className="text-[10px] text-muted-foreground">{product.vendorCity}</p>
-                </div>
-              </div>
-              <button
-                onClick={onViewSeller}
-                className="w-full py-2 rounded-lg border border-primary/40 text-primary text-xs font-bold hover:bg-primary/10 transition-colors">
-                
-                Voir le profil complet
-              </button>
-            </div>
-          </div>
-
-          {/* Reviews */}
-          {product.reviews && product.reviews.length > 0 &&
-          <div>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-extrabold text-foreground uppercase tracking-wide">Avis clients</h2>
-                <div className="flex items-center gap-1.5">
-                  <StarRating rating={product.rating || 0} />
-                  <span className="text-xs text-muted-foreground">{product.reviewCount} avis</span>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {product.reviews.map((review, idx) =>
-              <div key={idx} className="p-3.5 bg-secondary rounded-xl">
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <div>
-                        <p className="text-xs font-bold text-foreground">{review.author}</p>
-                        <p className="text-[10px] text-muted-foreground">{review.date}</p>
-                      </div>
-                      <StarRating rating={review.rating} />
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{review.comment}</p>
-                  </div>
-              )}
-              </div>
-            </div>
-          }
-
-          {/* CTA buttons */}
-          <div className="flex gap-3 pt-1 pb-1">
-            <button
-              onClick={onReserve}
-              disabled={product.stock === 'Rupture de stock'}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-primary/40 text-primary text-sm font-bold hover:bg-primary/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-              
-              <CalendarDaysIcon className="w-4 h-4" />
-              Réserver
-            </button>
-            <button
-              onClick={onOrder}
-              disabled={product.stock === 'Rupture de stock'}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-              
-              <ShoppingCartIcon className="w-4 h-4" />
-              Ajouter au panier
-            </button>
-          </div>
+          <div><h1 className="text-xl font-extrabold text-foreground leading-tight mb-2">{product.name}</h1><div className="flex items-center flex-wrap gap-3 mb-3"><div className="flex items-baseline gap-1"><span className="text-2xl font-extrabold text-primary">{product.price}</span><span className="text-sm text-muted-foreground">{product.unit}</span></div>{product.stock && <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${stockColor}`}><span className={`w-1.5 h-1.5 rounded-full ${stockDot}`} />{product.stock}{product.stock === 'Stock limité' && product.stockQty && <span className="opacity-70">({product.stockQty} restants)</span>}</span>}</div>{product.rating && <div className="flex items-center gap-2"><StarRating rating={product.rating} size="md" /><span className="text-sm font-bold text-foreground">{product.rating.toFixed(1)}</span><span className="text-xs text-muted-foreground">({product.reviewCount} avis)</span></div>}</div>
+          {product.description && <div><h2 className="text-sm font-extrabold text-foreground mb-2 uppercase tracking-wide">Description</h2><p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p></div>}
+          <div className="grid grid-cols-2 gap-2"><div className="flex items-center gap-2.5 p-3 bg-secondary rounded-xl"><TruckIcon className="w-4 h-4 text-primary shrink-0" /><div><p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Livraison</p><p className="text-xs font-bold text-foreground">Disponible</p></div></div><div className="flex items-center gap-2.5 p-3 bg-secondary rounded-xl"><ShieldCheckIcon className="w-4 h-4 text-primary shrink-0" /><div><p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Garantie</p><p className="text-xs font-bold text-foreground">Qualité assurée</p></div></div></div>
+          <div className="border border-border rounded-xl overflow-hidden"><div className="px-4 py-3 border-b border-border bg-secondary/50"><h2 className="text-sm font-extrabold text-foreground uppercase tracking-wide">Vendeur</h2></div><div className="p-4"><div className="flex items-center gap-3 mb-3"><div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center shrink-0 overflow-hidden">{product.vendorLogo ? <AppImage src={product.vendorLogo} alt={product.vendor} width={48} height={48} className="w-full h-full object-cover" /> : <span className="text-base font-extrabold text-primary">{initials}</span>}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-1.5 flex-wrap"><span className="text-sm font-extrabold text-foreground truncate">{product.vendor}</span>{product.vendorVerified && <CheckBadgeIcon className="w-4 h-4 text-primary shrink-0" />}</div><p className="text-xs text-muted-foreground">{product.vendorType}</p></div>{product.vendorVerified && <span className="shrink-0 px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-full border border-primary/20">✓ Vérifié</span>}</div><div className="grid grid-cols-3 gap-2 mb-3"><div className="text-center p-2 bg-secondary rounded-lg"><p className="text-sm font-extrabold text-foreground">{product.vendorSince || '—'}</p><p className="text-[10px] text-muted-foreground">Depuis</p></div><div className="text-center p-2 bg-secondary rounded-lg"><p className="text-sm font-extrabold text-foreground">{product.vendorProducts || '—'}</p><p className="text-[10px] text-muted-foreground">Produits</p></div><div className="text-center p-2 bg-secondary rounded-lg"><MapPinIcon className="w-3.5 h-3.5 text-primary mx-auto mb-0.5" /><p className="text-[10px] text-muted-foreground">{product.vendorCity}</p></div></div><button onClick={onViewSeller} className="w-full py-2 rounded-lg border border-primary/40 text-primary text-xs font-bold hover:bg-primary/10 transition-colors">Voir le profil complet</button></div></div>
+          {product.reviews && product.reviews.length > 0 && <div><div className="flex items-center justify-between mb-3"><h2 className="text-sm font-extrabold text-foreground uppercase tracking-wide">Avis clients</h2><div className="flex items-center gap-1.5"><StarRating rating={product.rating || 0} /><span className="text-xs text-muted-foreground">{product.reviewCount} avis</span></div></div><div className="space-y-3">{product.reviews.map((review, idx) => <div key={idx} className="p-3.5 bg-secondary rounded-xl"><div className="flex items-start justify-between gap-2 mb-1.5"><div><p className="text-xs font-bold text-foreground">{review.author}</p><p className="text-[10px] text-muted-foreground">{review.date}</p></div><StarRating rating={review.rating} /></div><p className="text-xs text-muted-foreground leading-relaxed">{review.comment}</p></div>)}</div></div>}
+          <div className="flex gap-3 pt-1 pb-1"><button onClick={onReserve} disabled={product.stock === 'Rupture de stock'} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-primary/40 text-primary text-sm font-bold hover:bg-primary/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"><CalendarDaysIcon className="w-4 h-4" />Réserver</button><button onClick={onOrder} disabled={product.stock === 'Rupture de stock'} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"><ShoppingCartIcon className="w-4 h-4" />Ajouter au panier</button></div>
         </div>
       </div>
     </div>);
-
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -482,336 +294,19 @@ export default function MarketplaceContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top bar */}
-      <div className="border-b border-border px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-primary transition-colors">Accueil</Link>
-          <span>/</span>
-          <span className="text-foreground font-medium">Marketplace</span>
-        </div>
-      </div>
+      <div className="border-b border-border px-4 py-3"><div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-muted-foreground"><Link href="/" className="hover:text-primary transition-colors">Accueil</Link><span>/</span><span className="text-foreground font-medium">Marketplace</span></div></div>
       <div className="max-w-7xl mx-auto px-4 py-6 flex gap-6">
-        {/* Sidebar - desktop */}
-        <aside className="hidden lg:flex flex-col gap-6 w-56 shrink-0">
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-border">
-              <h3 className="font-bold text-sm text-foreground">Catégories</h3>
-            </div>
-            <div className="p-2">
-              {allCategories?.map((cat) =>
-              <button
-                key={cat?.label}
-                onClick={() => setSelectedCategory(cat?.label)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all ${
-                selectedCategory === cat?.label ? 'bg-primary/15 text-primary font-semibold' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`
-                }>
-                
-                  <span>{cat?.label}</span>
-                  {cat?.count > 0 &&
-                <span className={`text-[11px] ${selectedCategory === cat?.label ? 'text-primary' : 'text-muted-foreground'}`}>{cat?.count}</span>
-                }
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-border">
-              <h3 className="font-bold text-sm text-foreground">Localisation</h3>
-            </div>
-            <div className="p-2">
-              {allCities?.map((city) =>
-              <button
-                key={city}
-                onClick={() => setSelectedCity(city)}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
-                selectedCity === city ? 'bg-primary/15 text-primary font-semibold' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`
-                }>
-                
-                  <MapPinIcon className="w-3.5 h-3.5" />
-                  <span>{city}</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </aside>
-
-        {/* Main content */}
+        <aside className="hidden lg:flex flex-col gap-6 w-56 shrink-0"><div className="bg-card border border-border rounded-xl overflow-hidden"><div className="px-4 py-3 border-b border-border"><h3 className="font-bold text-sm text-foreground">Catégories</h3></div><div className="p-2">{allCategories?.map((cat) => <button key={cat?.label} onClick={() => setSelectedCategory(cat?.label)} className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all ${selectedCategory === cat?.label ? 'bg-primary/15 text-primary font-semibold' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}><span>{cat?.label}</span>{cat?.count > 0 && <span className={`text-[11px] ${selectedCategory === cat?.label ? 'text-primary' : 'text-muted-foreground'}`}>{cat?.count}</span>}</button>)}</div></div><div className="bg-card border border-border rounded-xl overflow-hidden"><div className="px-4 py-3 border-b border-border"><h3 className="font-bold text-sm text-foreground">Localisation</h3></div><div className="p-2">{allCities?.map((city) => <button key={city} onClick={() => setSelectedCity(city)} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${selectedCity === city ? 'bg-primary/15 text-primary font-semibold' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}><MapPinIcon className="w-3.5 h-3.5" /><span>{city}</span></button>)}</div></div></aside>
         <div className="flex-1 min-w-0">
-          {/* Search + filter bar */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex-1 flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2.5">
-              <MagnifyingGlassIcon className="w-4 h-4 text-muted-foreground shrink-0" />
-              <input
-                type="text"
-                placeholder="Rechercher un produit..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e?.target?.value)}
-                className="flex-1 bg-transparent text-sm text-foreground placeholder-muted-foreground outline-none" />
-              
-              {searchQuery &&
-              <button onClick={() => setSearchQuery('')}>
-                  <XMarkIcon className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-                </button>
-              }
-            </div>
-            <select
-              value={selectedCity}
-              onChange={(e) => setSelectedCity(e?.target?.value)}
-              className="hidden sm:block bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground outline-none cursor-pointer">
-              
-              {allCities?.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-semibold">
-              
-              <AdjustmentsHorizontalIcon className="w-4 h-4" />
-              Filtrer
-            </button>
-          </div>
-
-          {/* Mobile sidebar overlay */}
-          {sidebarOpen &&
-          <div className="lg:hidden fixed inset-0 z-50 bg-black/60" onClick={() => setSidebarOpen(false)}>
-              <div className="absolute left-0 top-0 bottom-0 w-72 bg-card border-r border-border p-4 overflow-y-auto" onClick={(e) => e?.stopPropagation()}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-foreground">Filtres</h3>
-                  <button onClick={() => setSidebarOpen(false)}>
-                    <XMarkIcon className="w-5 h-5 text-muted-foreground" />
-                  </button>
-                </div>
-                <div className="mb-4">
-                  <h4 className="text-sm font-semibold text-foreground mb-2">Catégories</h4>
-                  {allCategories?.map((cat) =>
-                <button
-                  key={cat?.label}
-                  onClick={() => {setSelectedCategory(cat?.label);setSidebarOpen(false);}}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm mb-1 transition-all ${selectedCategory === cat?.label ? 'bg-primary/15 text-primary font-semibold' : 'text-muted-foreground hover:bg-secondary'}`}>
-                  
-                      <span>{cat?.label}</span>
-                      {cat?.count > 0 && <span className="text-[11px]">{cat?.count}</span>}
-                    </button>
-                )}
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-foreground mb-2">Villes</h4>
-                  {allCities?.map((city) =>
-                <button
-                  key={city}
-                  onClick={() => {setSelectedCity(city);setSidebarOpen(false);}}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm mb-1 transition-all ${selectedCity === city ? 'bg-primary/15 text-primary font-semibold' : 'text-muted-foreground hover:bg-secondary'}`}>
-                  
-                      <MapPinIcon className="w-3.5 h-3.5" />
-                      <span>{city}</span>
-                    </button>
-                )}
-                </div>
-              </div>
-            </div>
-          }
-
-          {/* Results count */}
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-muted-foreground">
-              <span className="text-foreground font-semibold">{filtered?.length}</span> produits trouvés
-            </p>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {selectedCategory !== 'Toutes catégories' &&
-              <span className="badge-gold cursor-pointer" onClick={() => setSelectedCategory('Toutes catégories')}>
-                  {selectedCategory} ×
-                </span>
-              }
-            </div>
-          </div>
-
-          {/* Products grid */}
-          {filtered?.length === 0 ?
-          <div className="text-center py-20 text-muted-foreground">
-              <p className="text-lg font-semibold mb-2">Aucun produit trouvé</p>
-              <p className="text-sm">Essayez de modifier vos filtres</p>
-            </div> :
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filtered?.map((product) =>
-            <div key={product?.id} className="product-card flex flex-col">
-                  {/* Image — click opens detail */}
-                  <button
-                className="relative h-36 overflow-hidden w-full text-left"
-                onClick={() => setDetailProduct(product)}>
-                
-                    <AppImage
-                  src={product?.image}
-                  alt={product?.alt}
-                  fill
-                  className="object-cover hover:scale-105 transition-transform duration-300"
-                  sizes="(max-width: 768px) 50vw, 25vw" />
-                
-                    <div className="absolute top-2 right-2">
-                      <span className="badge-gold text-[10px]">{product?.category}</span>
-                    </div>
-                    {/* Stock badge */}
-                    {product.stock === 'Stock limité' &&
-                <div className="absolute bottom-2 left-2">
-                        <span className="px-1.5 py-0.5 bg-amber-400/90 text-black text-[9px] font-bold rounded">Stock limité</span>
-                      </div>
-                }
-                    {product.stock === 'Rupture de stock' &&
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <span className="px-2 py-1 bg-red-500/90 text-white text-[10px] font-bold rounded">Rupture de stock</span>
-                      </div>
-                }
-                  </button>
-
-                  {/* Info */}
-                  <div className="p-3 flex flex-col flex-1">
-                    {/* Product name — click opens detail */}
-                    <button
-                  onClick={() => setDetailProduct(product)}
-                  className="text-sm font-bold text-foreground leading-tight mb-1 line-clamp-2 text-left hover:text-primary transition-colors">
-                  
-                      {product?.name}
-                    </button>
-
-                    {/* Rating */}
-                    {product.rating &&
-                <div className="flex items-center gap-1 mb-1.5">
-                        <StarRating rating={product.rating} />
-                        <span className="text-[10px] text-muted-foreground">({product.reviewCount})</span>
-                      </div>
-                }
-
-                    {/* Seller row */}
-                    <button
-                  onClick={() =>
-                  setSellerModal({
-                    name: product.vendor,
-                    type: product.vendorType,
-                    phone: product.vendorPhone,
-                    email: product.vendorEmail,
-                    city: product.vendorCity,
-                    verified: product.vendorVerified,
-                    category: product.category, logoUrl: product.vendorLogo, coverUrl: product.vendorCover
-                  })
-                  }
-                  className="flex items-center gap-1 mb-1.5 group/seller w-full text-left">
-                  
-                      <CheckBadgeIcon className="w-3 h-3 text-primary shrink-0" />
-                      <span className="text-[11px] text-muted-foreground group-hover/seller:text-primary transition-colors font-medium underline-offset-2 group-hover/seller:underline truncate">
-                        {product?.vendor}
-                      </span>
-                    </button>
-
-                    <div className="flex items-center gap-1 mb-3">
-                      <MapPinIcon className="w-3 h-3 text-muted-foreground" />
-                      <p className="text-[11px] text-muted-foreground">{product?.city}</p>
-                    </div>
-
-                    {/* Price */}
-                    <div className="flex items-baseline gap-1 mb-3">
-                      <span className="text-sm font-extrabold text-primary">{product?.price}</span>
-                      <span className="text-[10px] text-muted-foreground">{product?.unit}</span>
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="flex gap-1.5 mt-auto">
-                      <button
-                    onClick={() =>
-                    handleProtectedAction('reserve', () =>
-                    setOrderModal({
-                      product: { id: product.id, name: product.name, price: product.price, unit: product.unit, vendor: product.vendor },
-                      mode: 'reserve'
-                    })
-                    )
-                    }
-                    className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border border-primary/40 text-primary text-[11px] font-semibold hover:bg-primary/10 transition-colors">
-                    
-                        <CalendarDaysIcon className="w-3 h-3" />
-                        Réserver
-                      </button>
-                      <button
-                    onClick={() =>
-                    handleProtectedAction('order', () =>
-                    setOrderModal({
-                      product: { id: product.id, name: product.name, price: product.price, unit: product.unit, vendor: product.vendor },
-                      mode: 'order'
-                    })
-                    )
-                    }
-                    className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold hover:bg-primary/90 transition-colors">
-                    
-                        <ShoppingCartIcon className="w-3 h-3" />
-                        Commander
-                      </button>
-                    </div>
-                  </div>
-                </div>
-            )}
-            </div>
-          }
+          <div className="flex items-center gap-3 mb-6"><div className="flex-1 flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2.5"><MagnifyingGlassIcon className="w-4 h-4 text-muted-foreground shrink-0" /><input type="text" placeholder="Rechercher un produit..." value={searchQuery} onChange={(e) => setSearchQuery(e?.target?.value)} className="flex-1 bg-transparent text-sm text-foreground placeholder-muted-foreground outline-none" />{searchQuery && <button onClick={() => setSearchQuery('')}><XMarkIcon className="w-4 h-4 text-muted-foreground hover:text-foreground" /></button>}</div><select value={selectedCity} onChange={(e) => setSelectedCity(e?.target?.value)} className="hidden sm:block bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground outline-none cursor-pointer">{allCities?.map((c) => <option key={c} value={c}>{c}</option>)}</select><button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-semibold"><AdjustmentsHorizontalIcon className="w-4 h-4" />Filtrer</button></div>
+          {sidebarOpen && <div className="lg:hidden fixed inset-0 z-50 bg-black/60" onClick={() => setSidebarOpen(false)}><div className="absolute left-0 top-0 bottom-0 w-72 bg-card border-r border-border p-4 overflow-y-auto" onClick={(e) => e?.stopPropagation()}><div className="flex items-center justify-between mb-4"><h3 className="font-bold text-foreground">Filtres</h3><button onClick={() => setSidebarOpen(false)}><XMarkIcon className="w-5 h-5 text-muted-foreground" /></button></div><div className="mb-4"><h4 className="text-sm font-semibold text-foreground mb-2">Catégories</h4>{allCategories?.map((cat) => <button key={cat?.label} onClick={() => {setSelectedCategory(cat?.label);setSidebarOpen(false);}} className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm mb-1 transition-all ${selectedCategory === cat?.label ? 'bg-primary/15 text-primary font-semibold' : 'text-muted-foreground hover:bg-secondary'}`}><span>{cat?.label}</span>{cat?.count > 0 && <span className="text-[11px]">{cat?.count}</span>}</button>)}</div><div><h4 className="text-sm font-semibold text-foreground mb-2">Villes</h4>{allCities?.map((city) => <button key={city} onClick={() => {setSelectedCity(city);setSidebarOpen(false);}} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm mb-1 transition-all ${selectedCity === city ? 'bg-primary/15 text-primary font-semibold' : 'text-muted-foreground hover:bg-secondary'}`}><MapPinIcon className="w-3.5 h-3.5" /><span>{city}</span></button>)}</div></div></div>}
+          <div className="flex items-center justify-between mb-4"><p className="text-sm text-muted-foreground"><span className="text-foreground font-semibold">{filtered?.length}</span> produits trouvés</p><div className="flex items-center gap-2 text-sm text-muted-foreground">{selectedCategory !== 'Toutes catégories' && <span className="badge-gold cursor-pointer" onClick={() => setSelectedCategory('Toutes catégories')}>{selectedCategory} ×</span>}</div></div>
+          {filtered?.length === 0 ? <div className="text-center py-20 text-muted-foreground"><p className="text-lg font-semibold mb-2">Aucun produit trouvé</p><p className="text-sm">Essayez de modifier vos filtres</p></div> : <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">{filtered?.map((product) => <div key={product?.id} className="product-card flex flex-col"><button className="relative h-36 overflow-hidden w-full text-left" onClick={() => setDetailProduct(product)}><AppImage src={product?.image} alt={product?.alt} fill className="object-cover hover:scale-105 transition-transform duration-300" sizes="(max-width: 768px) 50vw, 25vw" /><div className="absolute top-2 right-2"><span className="badge-gold text-[10px]">{product?.category}</span></div>{product.stock === 'Stock limité' && <div className="absolute bottom-2 left-2"><span className="px-1.5 py-0.5 bg-amber-400/90 text-black text-[9px] font-bold rounded">Stock limité</span></div>}{product.stock === 'Rupture de stock' && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><span className="px-2 py-1 bg-red-500/90 text-white text-[10px] font-bold rounded">Rupture de stock</span></div>}</button><div className="p-3 flex flex-col flex-1"><button onClick={() => setDetailProduct(product)} className="text-sm font-bold text-foreground leading-tight mb-1 line-clamp-2 text-left hover:text-primary transition-colors">{product?.name}</button>{product.rating && <div className="flex items-center gap-1 mb-1.5"><StarRating rating={product.rating} /><span className="text-[10px] text-muted-foreground">({product.reviewCount})</span></div>}<button onClick={() => setSellerModal({name: product.vendor,type: product.vendorType,phone: product.vendorPhone,email: product.vendorEmail,city: product.vendorCity,verified: product.vendorVerified,category: product.category,logoUrl: product.vendorLogo,coverUrl: product.vendorCover})} className="flex items-center gap-1 mb-1.5 group/seller w-full text-left"><CheckBadgeIcon className="w-3 h-3 text-primary shrink-0" /><span className="text-[11px] text-muted-foreground group-hover/seller:text-primary transition-colors font-medium underline-offset-2 group-hover/seller:underline truncate">{product?.vendor}</span></button><div className="flex items-center gap-1 mb-3"><MapPinIcon className="w-3 h-3 text-muted-foreground" /><p className="text-[11px] text-muted-foreground">{product?.city}</p></div><div className="flex items-baseline gap-1 mb-3"><span className="text-sm font-extrabold text-primary">{product?.price}</span><span className="text-[10px] text-muted-foreground">{product?.unit}</span></div><div className="flex gap-1.5 mt-auto"><button onClick={() => handleProtectedAction('reserve', () => setOrderModal({product:{id:product.id,name:product.name,price:product.price,unit:product.unit,vendor:product.vendor},mode:'reserve'}))} className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border border-primary/40 text-primary text-[11px] font-semibold hover:bg-primary/10 transition-colors"><CalendarDaysIcon className="w-3 h-3" />Réserver</button><button onClick={() => handleProtectedAction('order', () => setOrderModal({product:{id:product.id,name:product.name,price:product.price,unit:product.unit,vendor:product.vendor},mode:'order'}))} className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-semibold hover:bg-primary/90 transition-colors"><ShoppingCartIcon className="w-3 h-3" />Commander</button></div></div></div>)}</div>}
         </div>
       </div>
-
-      {/* Product detail modal */}
-      {detailProduct &&
-      <ProductDetailModal
-        product={detailProduct}
-        onClose={() => setDetailProduct(null)}
-        onOrder={() =>
-        handleProtectedAction('order', () => {
-          setOrderModal({
-            product: { id: detailProduct.id, name: detailProduct.name, price: detailProduct.price, unit: detailProduct.unit, vendor: detailProduct.vendor },
-            mode: 'order'
-          });
-          setDetailProduct(null);
-        })
-        }
-        onReserve={() =>
-        handleProtectedAction('reserve', () => {
-          setOrderModal({
-            product: { id: detailProduct.id, name: detailProduct.name, price: detailProduct.price, unit: detailProduct.unit, vendor: detailProduct.vendor },
-            mode: 'reserve'
-          });
-          setDetailProduct(null);
-        })
-        }
-        onViewSeller={() => {
-          setSellerModal({
-            name: detailProduct.vendor,
-            type: detailProduct.vendorType,
-            phone: detailProduct.vendorPhone,
-            email: detailProduct.vendorEmail,
-            city: detailProduct.vendorCity,
-            verified: detailProduct.vendorVerified,
-            category: detailProduct.category
-          });
-          setDetailProduct(null);
-        }} />
-
-      }
-
-      {/* Seller profile modal */}
-      {sellerModal &&
-      <SellerProfileModal
-        seller={sellerModal}
-        onClose={() => setSellerModal(null)}
-        onContact={() => handleProtectedAction('contact', () => setSellerModal(null))} />
-
-      }
-
-      {/* Order / Reserve modal */}
-      {orderModal &&
-      <OrderModal
-        product={orderModal.product}
-        mode={orderModal.mode}
-        onClose={() => setOrderModal(null)} />
-
-      }
-
-      {/* Auth guard modal */}
-      {authGuard &&
-      <AuthGuardModal action={authGuard} onClose={() => setAuthGuard(null)} />
-      }
+      {detailProduct && <ProductDetailModal product={detailProduct} onClose={() => setDetailProduct(null)} onOrder={() => handleProtectedAction('order', () => {setOrderModal({product:{id:detailProduct.id,name:detailProduct.name,price:detailProduct.price,unit:detailProduct.unit,vendor:detailProduct.vendor},mode:'order'});setDetailProduct(null);})} onReserve={() => handleProtectedAction('reserve', () => {setOrderModal({product:{id:detailProduct.id,name:detailProduct.name,price:detailProduct.price,unit:detailProduct.unit,vendor:detailProduct.vendor},mode:'reserve'});setDetailProduct(null);})} onViewSeller={() => {setSellerModal({name:detailProduct.vendor,type:detailProduct.vendorType,phone:detailProduct.vendorPhone,email:detailProduct.vendorEmail,city:detailProduct.vendorCity,verified:detailProduct.vendorVerified,category:detailProduct.category});setDetailProduct(null);}} />}
+      {sellerModal && <SellerProfileModal seller={sellerModal} onClose={() => setSellerModal(null)} onContact={() => handleProtectedAction('contact', () => setSellerModal(null))} />}
+      {orderModal && <OrderModal product={orderModal.product} mode={orderModal.mode} onClose={() => setOrderModal(null)} />}
+      {authGuard && <AuthGuardModal action={authGuard} onClose={() => setAuthGuard(null)} />}
     </div>);
-
 }
