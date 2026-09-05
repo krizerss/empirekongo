@@ -1,0 +1,85 @@
+name: Connect marketplace to Supabase
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, '[marketplace-patch]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch marketplace
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('src/app/marketplace/components/MarketplaceContent.tsx')
+          s=p.read_text()
+          s=s.replace("import React, { useState } from 'react';", "import React, { useEffect, useMemo, useState } from 'react';")
+          s=s.replace("import { useAuth } from '@/lib/useAuth';", "import { useAuth } from '@/lib/useAuth';\nimport { createClient } from '@/lib/supabase/client';")
+          s=s.replace('id: number;', 'id: string;')
+          s=s.replace("  vendorProducts?: number;\n}", "  vendorProducts?: number;\n  vendorLogo?: string;\n  vendorCover?: string;\n  enterpriseId?: string;\n}")
+          s=s.replace("  category: string;\n}\n\nfunction SellerProfileModal", "  category: string;\n  logoUrl?: string;\n  coverUrl?: string;\n}\n\nfunction SellerProfileModal")
+          a=s.find('const allCategories = ['); b=s.find('const allCities =',a)
+          if a>=0 and b>=0: s=s[:a]+s[b:]
+          a=s.find('const allCities = ['); b=s.find('interface Product',a)
+          if a>=0 and b>=0: s=s[:a]+s[b:]
+          a=s.find('const allProducts: Product[] = ['); b=s.find('// ─── Seller Profile Modal',a)
+          if a<0 or b<0: raise SystemExit('mock block not found')
+          s=s[:a]+s[b:]
+          marker='// ─── Main Component ───────────────────────────────────────────────────────────\n\nexport default function MarketplaceContent() {'
+          ins='''// ─── Main Component ───────────────────────────────────────────────────────────
+
+interface DbProductRow {
+  id:string; name:string; description:string|null; price:string; unit:string|null; category:string|null; city:string|null;
+  image_url:string|null; alt_text:string|null; stock_status:Product['stock']; stock_qty:number|null; rating:number|string|null; review_count:number|null;
+  vendor_id:string|null; vendor_name:string|null; vendor_type:string|null; vendor_phone:string|null; vendor_email:string|null; vendor_city:string|null;
+  vendor_verified:boolean|null; vendor_since:string|null; enterprise_id:string|null; created_at:string;
+  enterprises?: {name?:string|null; logo_url?:string|null; cover_url?:string|null; is_verified?:boolean|null; founded_year?:number|null; city?:string|null}|null;
+}
+function mapDbProduct(row:DbProductRow, counts:Map<string,number>):Product {
+  const rating=row.rating==null?undefined:Number(row.rating);
+  const vendorName=row.vendor_name||row.enterprises?.name||'Vendeur';
+  const vendorCity=row.vendor_city||row.enterprises?.city||row.city||'';
+  return {id:row.id,name:row.name,vendor:vendorName,vendorType:row.vendor_type||'Entreprise',vendorPhone:row.vendor_phone||'',vendorEmail:row.vendor_email||'',vendorCity,
+    vendorVerified:Boolean(row.vendor_verified||row.enterprises?.is_verified),price:row.price,unit:row.unit?(row.unit.startsWith('/')?row.unit:`/ ${row.unit}`):'',category:row.category||'Autres',city:row.city||vendorCity,
+    image:row.image_url||'',alt:row.alt_text||row.name,description:row.description||undefined,stock:row.stock_status||'En stock',stockQty:row.stock_qty??0,
+    rating:Number.isFinite(rating as number)?rating:undefined,reviewCount:row.review_count??0,vendorSince:row.vendor_since||(row.enterprises?.founded_year?String(row.enterprises.founded_year):''),
+    vendorProducts:row.vendor_id?counts.get(row.vendor_id)??0:undefined,vendorLogo:row.enterprises?.logo_url||undefined,vendorCover:row.enterprises?.cover_url||undefined,enterpriseId:row.enterprise_id||undefined};
+}
+export default function MarketplaceContent() {'''
+          if marker not in s: raise SystemExit('main marker not found')
+          s=s.replace(marker,ins)
+          old="  const [detailProduct, setDetailProduct] = useState<Product | null>(null);\n\n  const handleProtectedAction"
+          new='''  const [detailProduct, setDetailProduct] = useState<Product | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  useEffect(() => {
+    const supabase=createClient(); let mounted=true;
+    const load=async()=>{
+      const {data,error}=await supabase.from('products').select(`id,name,description,price,unit,category,city,image_url,alt_text,stock_status,stock_qty,rating,review_count,vendor_id,vendor_name,vendor_type,vendor_phone,vendor_email,vendor_city,vendor_verified,vendor_since,enterprise_id,created_at,enterprises:enterprise_id(name,logo_url,cover_url,is_verified,founded_year,city)`).eq('is_active',true).order('created_at',{ascending:false});
+      if(!mounted)return; if(error){console.error('Marketplace:',error.message);setProducts([]);return;}
+      const rows=(data||[]) as unknown as DbProductRow[]; const counts=new Map<string,number>();
+      rows.forEach(r=>{if(r.vendor_id)counts.set(r.vendor_id,(counts.get(r.vendor_id)||0)+1);}); setProducts(rows.map(r=>mapDbProduct(r,counts)));
+    };
+    void load();
+    const channel=supabase.channel('marketplace-products').on('postgres_changes',{event:'*',schema:'public',table:'products'},()=>void load()).subscribe();
+    return()=>{mounted=false;void supabase.removeChannel(channel);};
+  },[]);
+  const allCategories=useMemo(()=>{const m=new Map<string,number>();products.forEach(p=>m.set(p.category,(m.get(p.category)||0)+1));return [{label:'Toutes catégories',count:products.length},...Array.from(m.entries()).sort(([a],[b])=>a.localeCompare(b,'fr')).map(([label,count])=>({label,count}))];},[products]);
+  const allCities=useMemo(()=>['Toutes les villes',...Array.from(new Set(products.map(p=>p.city).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'fr'))],[products]);
+
+  const handleProtectedAction'''
+          if old not in s: raise SystemExit('state marker not found')
+          s=s.replace(old,new).replace('const filtered = allProducts?.filter((p) => {','const filtered = products.filter((p) => {')
+          s=s.replace("                    category: product.category\n                  })","                    category: product.category, logoUrl: product.vendorLogo, coverUrl: product.vendorCover\n                  })")
+          s=s.replace('<div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0">\n              <span className="text-lg font-extrabold text-primary">{initials}</span>', '<div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0 overflow-hidden">\n              {seller.logoUrl ? <AppImage src={seller.logoUrl} alt={seller.name} width={56} height={56} className="w-full h-full object-cover" /> : <span className="text-lg font-extrabold text-primary">{initials}</span>')
+          s=s.replace('<div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">\n                  <span className="text-base font-extrabold text-primary">{initials}</span>', '<div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center shrink-0 overflow-hidden">\n                  {product.vendorLogo ? <AppImage src={product.vendorLogo} alt={product.vendor} width={48} height={48} className="w-full h-full object-cover" /> : <span className="text-base font-extrabold text-primary">{initials}</span>')
+          p.write_text(s)
+          PY
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/app/marketplace/components/MarketplaceContent.tsx
+          git commit -m 'Connect marketplace to Supabase [marketplace-patch]' || exit 0
+          git push
