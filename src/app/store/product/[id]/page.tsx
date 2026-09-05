@@ -22,14 +22,29 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const { error: viewError } = await supabase.from('product_views').insert({ product_id: product.id, viewer_id: user?.id ?? null });
   if (viewError) console.error('Erreur enregistrement vue produit:', viewError);
 
+  const { data: productImages, error: imagesError } = await supabase
+    .from('product_images')
+    .select('id,image_url,alt_text,sort_order')
+    .eq('product_id', product.id)
+    .order('sort_order', { ascending: true });
+  if (imagesError) console.error('Erreur chargement galerie produit:', imagesError);
+
   const vendorId = product.vendor_id ? String(product.vendor_id) : '';
   const { count: vendorProducts } = vendorId
     ? await supabase.from('products').select('id', { count: 'exact', head: true }).eq('vendor_id', vendorId).eq('is_active', true)
     : { count: 0 };
   const { data: similar } = await supabase.from('products').select('id,name,price,unit,image_url,alt_text,rating,review_count,vendor_name').eq('is_active', true).eq('category', product.category).neq('id', product.id).order('created_at', { ascending: false }).limit(4);
 
+  const mainImage = product.image_url || '/assets/images/no_image.png';
+  const galleryImages = (productImages ?? [])
+    .filter((img: any) => img?.image_url)
+    .map((img: any) => ({ src: String(img.image_url), alt: img.alt_text || product.alt_text || product.name || 'Produit EmpireKongo' }));
+  const images = galleryImages.length > 0
+    ? galleryImages
+    : [{ src: mainImage, alt: product.alt_text || product.name || 'Produit EmpireKongo' }];
+
   const detail: StoreProductDetail = {
-    id: String(product.id), name: product.name || 'Produit sans nom', description: product.description || '', price: product.price || 'Prix sur demande', unit: product.unit || '', category: product.category || 'Autre', subCategory: product.sub_category || '', city: product.city || product.vendor_city || '', image: product.image_url || '/assets/images/no_image.png', alt: product.alt_text || product.name || 'Produit EmpireKongo', stockQty: Number(product.stock_qty ?? 0), stockStatus: String(product.stock_status ?? ''), rating: Number(product.rating ?? 0), reviewCount: Number(product.review_count ?? 0), vendorId, vendorName: product.vendor_name || 'Fournisseur', vendorType: product.vendor_type || 'Fournisseur', vendorPhone: product.vendor_phone || '', vendorEmail: product.vendor_email || '', vendorCity: product.vendor_city || product.city || '', vendorVerified: Boolean(product.vendor_verified), vendorSince: product.vendor_since || '', vendorProducts: Number(vendorProducts ?? 0), similarProducts: (similar ?? []).map((p: any) => ({ id: String(p.id), name: p.name || 'Produit', vendorName: p.vendor_name || 'Fournisseur', price: p.price || 'Prix sur demande', unit: p.unit || '', image: p.image_url || '/assets/images/no_image.png', alt: p.alt_text || p.name || 'Produit', rating: Number(p.rating ?? 0) }))
+    id: String(product.id), name: product.name || 'Produit sans nom', description: product.description || '', price: product.price || 'Prix sur demande', unit: product.unit || '', category: product.category || 'Autre', subCategory: product.sub_category || '', city: product.city || product.vendor_city || '', image: mainImage, alt: product.alt_text || product.name || 'Produit EmpireKongo', images, stockQty: Number(product.stock_qty ?? 0), stockStatus: String(product.stock_status ?? ''), rating: Number(product.rating ?? 0), reviewCount: Number(product.review_count ?? 0), vendorId, vendorName: product.vendor_name || 'Fournisseur', vendorType: product.vendor_type || 'Fournisseur', vendorPhone: product.vendor_phone || '', vendorEmail: product.vendor_email || '', vendorCity: product.vendor_city || product.city || '', vendorVerified: Boolean(product.vendor_verified), vendorSince: product.vendor_since || '', vendorProducts: Number(vendorProducts ?? 0), similarProducts: (similar ?? []).map((p: any) => ({ id: String(p.id), name: p.name || 'Produit', vendorName: p.vendor_name || 'Fournisseur', price: p.price || 'Prix sur demande', unit: p.unit || '', image: p.image_url || '/assets/images/no_image.png', alt: p.alt_text || p.name || 'Produit', rating: Number(p.rating ?? 0) }))
   };
   return <StoreProductDetailClient product={detail} />;
 }
